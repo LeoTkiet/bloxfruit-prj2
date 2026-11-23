@@ -1,0 +1,164 @@
+{
+  "puzzle_id": "3x3_02",
+  "name": "3x3 Puzzle 2 - Neighbor Chain",
+  "difficulty": "medium",
+  "grid_size": 3,
+  "initial_revealed": [
+    "B2",
+    "C1"
+  ],
+  "tags": [
+    "3x3",
+    "core"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Abel",
+      "profession": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "C3"
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in neighbors of C3."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bea",
+      "profession": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column A."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Clara",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B1",
+            "C2",
+            "A3"
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in {B1, C2, A3}."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Derek",
+      "profession": "Cook",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 3
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in row 3."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Eliza",
+      "profession": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "A1"
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in neighbors of A1."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Franz",
+      "profession": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "DIFFERENT",
+        "targets": [
+          "B2",
+          "C3"
+        ],
+        "text": "B2 and C3 have different statuses."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Grant",
+      "profession": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "SAME",
+        "targets": [
+          "B1",
+          "B3"
+        ],
+        "text": "B1 and B3 have the same status."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Hannah",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B1",
+            "C2",
+            "B3"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {B1, C2, B3}."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Ivy",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "FACT",
+        "target": "C1",
+        "target_status": "INNOCENT",
+        "text": "C1 is Innocent."
+      }
+    }
+  ]
+}

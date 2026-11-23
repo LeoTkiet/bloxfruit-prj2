@@ -1,0 +1,430 @@
+{
+  "puzzle_id": "5x5_01",
+  "name": "5x5 Stress Case 1 - Grand Precinct",
+  "difficulty": "stress",
+  "grid_size": 5,
+  "initial_revealed": [
+    "A1",
+    "C3",
+    "E5",
+    "E1",
+    "A5"
+  ],
+  "tags": [
+    "5x5",
+    "core",
+    "stress"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Abel",
+      "profession": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "E2",
+            "D4"
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in {E2, D4}."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bea",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "C1"
+        },
+        "count": 3,
+        "text": "At most 3 Criminals in neighbors of C1."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Clara",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "E1",
+            "E4"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {E1, E4}."
+      }
+    },
+    {
+      "cell_id": "D1",
+      "name": "Derek",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "D1",
+            "B2",
+            "C5"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {D1, B2, C5}."
+      }
+    },
+    {
+      "cell_id": "E1",
+      "name": "Eliza",
+      "profession": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_E1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "E5"
+        },
+        "count": 3,
+        "text": "Exactly 3 Criminals in neighbors of E5."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Franz",
+      "profession": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 4
+        },
+        "count": 3,
+        "text": "At most 3 Criminals in row 4."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Grant",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "A2"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in neighbors of A2."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Hannah",
+      "profession": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "DIFFERENT",
+        "targets": [
+          "A2",
+          "B2"
+        ],
+        "text": "A2 and B2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "D2",
+      "name": "Ivy",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "D3"
+        },
+        "count": 5,
+        "text": "At most 5 Criminals in neighbors of D3."
+      }
+    },
+    {
+      "cell_id": "E2",
+      "name": "Jonas",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_E2",
+        "type": "DIFFERENT",
+        "targets": [
+          "B1",
+          "C1"
+        ],
+        "text": "B1 and C1 have different statuses."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Karl",
+      "profession": "Painter",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "SAME",
+        "targets": [
+          "B1",
+          "D1"
+        ],
+        "text": "B1 and D1 have the same status."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Leo",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "SAME",
+        "targets": [
+          "D3",
+          "C4"
+        ],
+        "text": "D3 and C4 have the same status."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Mara",
+      "profession": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B2",
+            "A3"
+          ]
+        },
+        "count": 0,
+        "text": "No one in {B2, A3} is a Criminal."
+      }
+    },
+    {
+      "cell_id": "D3",
+      "name": "Noah",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "B"
+        },
+        "count": 3,
+        "text": "At least 3 Criminals in column B."
+      }
+    },
+    {
+      "cell_id": "E3",
+      "name": "Owen",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_E3",
+        "type": "SAME",
+        "targets": [
+          "C2",
+          "C3"
+        ],
+        "text": "C2 and C3 have the same status."
+      }
+    },
+    {
+      "cell_id": "A4",
+      "name": "Priya",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A4",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 5
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in row 5."
+      }
+    },
+    {
+      "cell_id": "B4",
+      "name": "Quilla",
+      "profession": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "B2"
+        },
+        "count": 5,
+        "text": "Exactly 5 Criminals in neighbors of B2."
+      }
+    },
+    {
+      "cell_id": "C4",
+      "name": "Roy",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "C1"
+        },
+        "count": 3,
+        "text": "Exactly 3 Criminals in neighbors of C1."
+      }
+    },
+    {
+      "cell_id": "D4",
+      "name": "Sophia",
+      "profession": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "D2",
+            "A5"
+          ]
+        },
+        "count": 0,
+        "text": "No one in {D2, A5} is a Criminal."
+      }
+    },
+    {
+      "cell_id": "E4",
+      "name": "Tom",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_E4",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "ROW",
+          "row": 1
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in row 1."
+      }
+    },
+    {
+      "cell_id": "A5",
+      "name": "Uma",
+      "profession": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A5",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "E4"
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in neighbors of E4."
+      }
+    },
+    {
+      "cell_id": "B5",
+      "name": "Victor",
+      "profession": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B5",
+        "type": "AT_MOST",
+        "region": {
+          "type": "COL",
+          "col": "D"
+        },
+        "count": 3,
+        "text": "At most 3 Criminals in column D."
+      }
+    },
+    {
+      "cell_id": "C5",
+      "name": "Wendy",
+      "profession": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C5",
+        "type": "DIFFERENT",
+        "targets": [
+          "B1",
+          "B2"
+        ],
+        "text": "B1 and B2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "D5",
+      "name": "Xander",
+      "profession": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D5",
+        "type": "DIFFERENT",
+        "targets": [
+          "A4",
+          "C4"
+        ],
+        "text": "A4 and C4 have different statuses."
+      }
+    },
+    {
+      "cell_id": "E5",
+      "name": "Yara",
+      "profession": "Tailor",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_E5",
+        "type": "EXACTLY",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in column A."
+      }
+    }
+  ]
+}

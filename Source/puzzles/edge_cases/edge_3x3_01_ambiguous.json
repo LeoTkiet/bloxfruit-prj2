@@ -1,0 +1,165 @@
+{
+  "puzzle_id": "edge_3x3_ambiguous",
+  "name": "Edge Case 1 - Ambiguous Symmetry (No-Guess Trap)",
+  "difficulty": "edge_case",
+  "grid_size": 3,
+  "initial_revealed": [
+    "A1",
+    "C3"
+  ],
+  "tags": [
+    "3x3",
+    "edge_case",
+    "ambiguous"
+  ],
+  "expected_status": "AMBIGUOUS",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Abel",
+      "profession": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "ROW",
+          "row": 1
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in row 1."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bea",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "SAME",
+        "targets": [
+          "A2",
+          "A3"
+        ],
+        "text": "A2 and A3 have the same status."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Clara",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A2",
+            "B2"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A2, B2}."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Derek",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "FACT",
+        "target": "A3",
+        "target_status": "CRIMINAL",
+        "text": "A3 is a Criminal."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Eliza",
+      "profession": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "DIFFERENT",
+        "targets": [
+          "A2",
+          "B2"
+        ],
+        "text": "A2 and B2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Franz",
+      "profession": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A3",
+            "B3"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A3, B3}."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Grant",
+      "profession": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column A."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Hannah",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "NO",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B2",
+            "B3"
+          ]
+        },
+        "text": "No one in {B2, B3} is a Criminal."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Ivy",
+      "profession": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in column C."
+      }
+    }
+  ]
+}

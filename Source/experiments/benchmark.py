@@ -14,7 +14,9 @@ import gc
 import json
 import multiprocessing
 import os
+import pickle
 import platform
+import queue
 import statistics
 import subprocess
 import sys
@@ -139,6 +141,25 @@ def _compute_max_region_size(clues: Sequence[Clue], grid_size: int) -> int:
     return max_size
 
 
+# Errors `multiprocessing.Queue.get` can raise when the worker dies mid-write.
+_QUEUE_READ_ERRORS = (EOFError, OSError, pickle.UnpicklingError)
+
+
+def _puzzle_max_region_size(puzzle: Any) -> int | str:
+    """Puzzle-level `max_region_size` over all clues, identical for every config/status.
+
+    Counts every clue that has a region (incl. PARITY / COMPARE_COUNTS). Returns `""`
+    when a region is invalid so an unvalidated puzzle yields an ERROR row in its worker
+    instead of aborting the whole benchmark in the parent process.
+    """
+    try:
+        return _compute_max_region_size(
+            [ch.hidden_clue for ch in puzzle.characters], puzzle.grid_size
+        )
+    except ValueError:  # PuzzleValidationError subclasses ValueError
+        return ""
+
+
 def _execute_single_in_process(
     puzzle_path_str: str,
     cfg: ExperimentConfig,
@@ -152,9 +173,7 @@ def _execute_single_in_process(
             "terminal_status": "SKIPPED_NO_ENCODER",
             "effective_encoding": sel.effective_encoding,
             "error_message": sel.skipped_reason or "Missing encoder",
-            "max_region_size": _compute_max_region_size(
-                [ch.hidden_clue for ch in puzzle.characters], puzzle.grid_size
-            ),
+            "max_region_size": _puzzle_max_region_size(puzzle),
             "verdict_trace": (),
         }
 
@@ -196,9 +215,7 @@ def _execute_single_in_process(
     total_backtracks = sum(q.metrics.backtracks for q in real_queries)
     solver_runtime_ms = round(sum(q.metrics.runtime_ms for q in real_queries), 3)
     deduction_steps = sum(1 for s in steps if s.verdict_code == VerdictCode.ACCEPTED)
-    max_region_size = _compute_max_region_size(
-        final_state.revealed_clues, puzzle.grid_size
-    )
+    max_region_size = _puzzle_max_region_size(puzzle)
 
     error_msg = ""
     if terminal_status == "AMBIGUOUS":
@@ -288,13 +305,19 @@ def run_with_timeout(
         try:
             status_payload = q.get(timeout=min(0.05, remaining))
             break
-        except Exception:
+        except queue.Empty:
             if not proc.is_alive():
                 try:
                     status_payload = q.get(timeout=0.1)
-                except Exception:
+                except queue.Empty:
                     status_payload = None
+                except _QUEUE_READ_ERRORS as exc:
+                    status_payload = ("ERROR", f"Worker queue failed: {type(exc).__name__}: {exc}")
                 break
+        except _QUEUE_READ_ERRORS as exc:
+            # Broken pipe / truncated payload from a dying worker: report ERROR, keep cleanup.
+            status_payload = ("ERROR", f"Worker queue failed: {type(exc).__name__}: {exc}")
+            break
 
     if status_payload is None:
         if proc.is_alive():
@@ -345,15 +368,18 @@ def _build_raw_row(
     repeat_idx: int,
     timeout_limit_ms: int,
     result: dict[str, Any],
+    max_region_size: Optional[int | str] = None,
 ) -> dict[str, Any]:
     total_cells = grid_size * grid_size
+    if max_region_size is None:
+        max_region_size = result.get("max_region_size", "")
     return {
         "run_timestamp": datetime.now().astimezone().isoformat(timespec="seconds"),
         "puzzle_id": puzzle_id,
         "dataset_group": dataset_group,
         "grid_size": grid_size,
         "initial_revealed": initial_revealed,
-        "max_region_size": result.get("max_region_size", ""),
+        "max_region_size": max_region_size,
         "config_id": cfg.config_id,
         "encoding": result.get("effective_encoding", effective_encoding),
         "heuristic": cfg.heuristic,
@@ -588,6 +614,7 @@ def run_benchmark(
 
     for dataset_group, puzzle_path in puzzles:
         puzzle = load_puzzle_definition(puzzle_path)
+        puzzle_max_region = _puzzle_max_region_size(puzzle)
 
         for cfg in configs:
             sel = selections[cfg.encoding]
@@ -602,6 +629,7 @@ def run_benchmark(
                         effective_encoding=sel.effective_encoding,
                         repeat_idx=1,
                         timeout_limit_ms=timeout_limit_ms,
+                        max_region_size=puzzle_max_region,
                         result={
                             "terminal_status": "SKIPPED_NO_ENCODER",
                             "effective_encoding": sel.effective_encoding,
@@ -626,6 +654,7 @@ def run_benchmark(
                         effective_encoding=sel.effective_encoding,
                         repeat_idx=rep,
                         timeout_limit_ms=timeout_limit_ms,
+                        max_region_size=puzzle_max_region,
                         result=res,
                     )
                 )

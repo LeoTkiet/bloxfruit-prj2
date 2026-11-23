@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Optional, Sequence
 
 from agent.entailment import (
@@ -24,6 +24,7 @@ from core.contracts.models import (
     DeductionStep,
     HintResult,
     PublicState,
+    SATMetrics,
     SATQueryLog,
     Status,
     UniquenessResult,
@@ -118,10 +119,15 @@ class DeductiveLogicAgent:
         key = make_kb_key(state)
         entry = self._kb_cache.get(key)
         if entry is not None and entry.fully_classified:
+            # KB-cache hit: no SAT call runs now, so every logged query is marked cached
+            # (avoids double-counting when get_hint/Restart reuse the same agent instance).
             return (
                 entry.consistent,
                 dict(entry.classification),
-                entry.sat_queries,
+                tuple(
+                    replace(q, cached=True, metrics=SATMetrics())
+                    for q in entry.sat_queries
+                ),
                 entry.cnf_stats,
             )
 

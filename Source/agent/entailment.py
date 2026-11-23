@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from types import MappingProxyType
 from typing import Mapping, Optional, Sequence
 
 from core.contracts.interfaces import ISATSolver
@@ -26,10 +27,16 @@ class EntailmentResult:
     """Complete consistency and per-cell entailment result for a KB_t."""
 
     consistent: bool
-    classification: dict[CellID, Status]
+    classification: Mapping[CellID, Status]
     sat_queries: tuple[SATQueryLog, ...]
     models: tuple[Mapping[int, bool], ...]
     real_sat_calls: int
+
+    def __post_init__(self) -> None:
+        # Read-only view, consistent with the frozen contracts in core/contracts/models.py.
+        object.__setattr__(
+            self, "classification", MappingProxyType(dict(self.classification))
+        )
 
 
 def check_kb_consistency(
@@ -146,7 +153,8 @@ def classify_board(
     if prechecked_consistency is not None:
         is_sat, base_model, base_query = prechecked_consistency
         if base_query is not None:
-            queries.append(base_query)
+            # Re-used from an earlier check_consistency call: no SAT run happens now.
+            queries.append(replace(base_query, cached=True, metrics=SATMetrics()))
     else:
         is_sat, base_model, base_query = check_kb_consistency(cnf, solver)
         real_calls += 1

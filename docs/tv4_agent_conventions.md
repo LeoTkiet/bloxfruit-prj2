@@ -11,7 +11,7 @@ Tài liệu này bổ sung cho `Source/core/contracts/` (đã đóng băng). M�
   class AutoSolveOutcome(str, Enum):
       SOLVED = "SOLVED"
       AMBIGUOUS = "AMBIGUOUS"          # KB_t nhất quán, chưa giải xong, không còn ô nào bị ép buộc
-      INCONSISTENT = "INCONSISTENT"    # KB_t UNSAT
+      INCONSISTENT = "INCONSISTENT"    # KB_t UNSAT, hoặc engine trả CONTRADICTED cho verdict agent đã chứng minh
   ```
 - `run_auto_solve` **luôn** trả về danh sách `DeductionStep`, trong đó **bước cuối là bước kết thúc** khi dừng vì AMBIGUOUS hoặc INCONSISTENT:
 
@@ -19,7 +19,7 @@ Tài liệu này bổ sung cho `Source/core/contracts/` (đã đóng băng). M�
   |---|---|
   | SOLVED | Không thêm bước kết thúc. Bước cuối là bước ACCEPTED cuối cùng; `engine.get_public_state().is_solved == True`. |
   | AMBIGUOUS | `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.NOT_PROVABLE`, `sat_queries` = các truy vấn của vòng cuối, `active_clue_ids` = toàn bộ clue đã lật. |
-  | INCONSISTENT | `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.INCONSISTENT`. |
+  | INCONSISTENT | `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.INCONSISTENT`. Ngoài ra, nếu engine trả `CONTRADICTED` cho verdict agent vừa chứng minh là bắt buộc thì kết cục cũng là INCONSISTENT (KB_t của agent và engine bất nhất), bước cuối giữ `cell`/`verdict` đã gửi và `verdict_code=CONTRADICTED`. |
 
 - Hàm tiện ích `outcome_of(steps, final_state) -> AutoSolveOutcome` suy ra kết cục từ quy tắc trên. Agent cũng lưu `self.last_outcome` sau mỗi lần `run_auto_solve`.
 - Cảnh báo: khi AMBIGUOUS, agent ghi `logging.getLogger("agent").warning(...)` một dòng có `puzzle_id`, `step`, danh sách ô còn UNKNOWN. **Không bao giờ đoán.**
@@ -32,7 +32,7 @@ Vấn đề: `GameEngine.submit_verdict` tự gọi lại `agent.check_consisten
 
 Quy ước:
 
-1. **Khóa KB (KB fingerprint):** `(puzzle_id, grid_size, frozenset(clue_id đã lật), frozenset(proved_verdicts.items()))`. Hai `PublicState` khác đối tượng nhưng cùng khóa thì cùng KB_t.
+1. **Khóa KB (KB fingerprint):** `(puzzle_id, grid_size, frozenset(state.revealed_clues), frozenset(proved_verdicts.items()))`, tức băm cả đối tượng `Clue` (không chỉ `clue_id`) nên hai clue cùng id nhưng khác nội dung không bị gộp nhầm. Hai `PublicState` khác đối tượng nhưng cùng khóa thì cùng KB_t.
 2. **Bộ nhớ đệm phân loại theo khóa KB:** mỗi khóa lưu `consistent: bool`, `classification: dict[CellID, Status]`, các model đã tìm thấy. `check_consistency` / `classify_character` / `classify_all` / `get_hint` tra đệm trước; nếu có thì **không gọi SAT**. Đệm chỉ giữ khóa KB hiện tại và khóa trước đó (LRU nhỏ, ≤ 8) để không phình bộ nhớ.
 3. **Thứ tự truy vấn cho mỗi KB_t** (`entailment.py`):
    - Gọi `solve(cnf)` một lần để kiểm tra nhất quán. UNSAT → INCONSISTENT. SAT → lưu model M₀.
@@ -44,6 +44,8 @@ Quy ước:
    - `stats.deduction_sat_calls` — truy vấn phát sinh khi agent tự suy luận (vòng lặp, hint, classify).
    - `stats.validation_sat_calls` — truy vấn phát sinh khi engine gọi lại để duyệt verdict. Với quy ước đệm ở trên, con số này phải bằng **0** trong `run_auto_solve`.
    - Benchmark chỉ báo cáo số liệu lấy từ `DeductionStep.sat_queries` (truy vấn có `cached=False`), không lấy tổng số lần gọi solver.
+   - Khi `_classify_all_with_trace` trúng đệm KB (ví dụ GUI gọi `get_hint` rồi bấm Auto Solve trên cùng instance agent), các `SATQueryLog` trả lại đều được đánh dấu `cached=True`; truy vấn nhất quán tái dùng từ `check_consistency` trước đó cũng vậy. Các log này cũng đặt `metrics=SATMetrics()` (rỗng) như mọi truy vấn `cached=True` khác. Nhờ đó số truy vấn `cached=False` trong trace luôn bằng số SAT call thật của lần chạy. Lưu ý: `cached=True` gộp cả trúng đệm KB lẫn bỏ qua nhờ model caching; muốn `sat_calls_cached_skipped` chỉ phản ánh model caching thì đo trên agent mới hoặc gọi `clear_cache()` trước (benchmark luôn tạo agent mới cho mỗi lượt).
+   - **Hướng dẫn cho TV5 (GUI):** khi người chơi bấm Restart hoặc nạp màn mới trên cùng instance `DeductiveLogicAgent`, gọi `agent.clear_cache()` và `agent.reset_stats()` để số liệu của lần chạy mới không lẫn với lần trước.
 5. Agent nhận `ICNFEncoder` và `ISATSolver` qua constructor (DI), không import trực tiếp `logic/` hay `solver/` trong `agent/`.
 
 ## 3. Callback animation (FAQ #4)

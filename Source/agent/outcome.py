@@ -23,9 +23,11 @@ def outcome_of(
     """Derive `AutoSolveOutcome` from the deduction trace and final public state."""
     if steps:
         last = steps[-1]
-        if last.verdict_code == VerdictCode.INCONSISTENT:
+        # CONTRADICTED on a verdict the agent just proved forced means the agent's
+        # KB_t and the engine disagree: an inconsistency, not an ambiguous board.
+        if last.verdict_code in (VerdictCode.INCONSISTENT, VerdictCode.CONTRADICTED):
             return AutoSolveOutcome.INCONSISTENT
-        if last.verdict_code in (VerdictCode.NOT_PROVABLE, VerdictCode.CONTRADICTED):
+        if last.verdict_code == VerdictCode.NOT_PROVABLE:
             return AutoSolveOutcome.AMBIGUOUS
 
     if final_state.is_solved:

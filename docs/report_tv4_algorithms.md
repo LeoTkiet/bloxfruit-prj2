@@ -166,7 +166,7 @@ Vòng lặp suy diễn chỉ kết thúc khi rơi vào đúng một trong ba tr�
 
 1. **`SOLVED`:** Không còn nhân vật nào chưa mở (`final_state.is_solved == True`,$U_t = \emptyset$). Không chèn thêm bước kết thúc; bước cuối là bước `ACCEPTED` cuối cùng.
 2. **`AMBIGUOUS` (dừng an toàn, không đoán):** Vẫn còn nhân vật chưa mở ($U_t \neq \emptyset$), $KB_t$ nhất quán, nhưng mọi nhân vật trong $U_t$ đều được phân loại là `UNKNOWN` (không có nhân vật nào bị ép buộc). Agent ghi nhận một bước kết thúc với `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.NOT_PROVABLE`, `sat_queries` của vòng cuối, `active_clue_ids` là toàn bộ clue đã lật, đồng thời ghi cảnh báo `logging.getLogger("agent").warning(...)` (gồm `puzzle_id`, `step`, danh sách ô còn `UNKNOWN`) và **tuyệt đối không đoán mò**.
-3. **`INCONSISTENT`:** Kiểm tra tính nhất quán cho thấy $KB_t$ là `UNSAT` (tập manh mối công khai và phán quyết tự mâu thuẫn). Agent ghi nhận một bước kết thúc với `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.INCONSISTENT` và dừng ngay.
+3. **`INCONSISTENT`:** Kiểm tra tính nhất quán cho thấy $KB_t$ là `UNSAT` (tập manh mối công khai và phán quyết tự mâu thuẫn). Agent ghi nhận một bước kết thúc với `cell=None`, `verdict=Status.UNKNOWN`, `verdict_code=VerdictCode.INCONSISTENT` và dừng ngay. Kết cục `INCONSISTENT` cũng xảy ra khi engine trả `CONTRADICTED` cho verdict agent vừa chứng minh là bắt buộc ($KB_t$ của agent và engine bất nhất); khi đó bước cuối giữ `cell`/`verdict` đã gửi và `verdict_code=VerdictCode.CONTRADICTED`.
 
 ### 3.3. Cơ chế callback `on_step` hỗ trợ Animation (FAQ #4)
 
@@ -184,9 +184,9 @@ Mỗi bước suy diễn sinh ra một bản ghi `DeductionStep` bất biến (`
 | `step_number` | `int` | Số thứ tự bước suy diễn (`1, 2, ...`, khớp `resp.public_state.step` khi `ACCEPTED` hoặc `state.step + 1` ở bước kết thúc). |
 | `active_clue_ids` | `tuple[str, ...]` | Danh sách `clue_id` của các manh mối đang lật ngửa trong $KB_t$. |
 | `sat_queries` | `tuple[SATQueryLog, ...]` | Danh sách các truy vấn SAT ở bước $t$: mỗi `SATQueryLog` gồm `cell` (`"KB"` cho truy vấn nhất quán, hoặc `CellID`), `assumptions`, `is_sat`, `metrics: SATMetrics`, và cờ `cached: bool`. |
-| `cell` | `Optional[CellID]` | Ô nhân vật được chọn theo thứ tự row-major (hoặc `None` ở bước kết thúc `AMBIGUOUS`/`INCONSISTENT`). |
-| `verdict` | `Status` | Phán quyết `CRIMINAL` / `INNOCENT`, hoặc `Status.UNKNOWN` ở bước kết thúc không lật thẻ. |
-| `verdict_code` | `VerdictCode` | `ACCEPTED` khi hợp lệ; `NOT_PROVABLE` ở bước kết thúc `AMBIGUOUS`; `INCONSISTENT` ở bước kết thúc `INCONSISTENT`; hoặc `CONTRADICTED`. |
+| `cell` | `Optional[CellID]` | Ô nhân vật được chọn theo thứ tự row-major (hoặc `None` ở bước kết thúc `AMBIGUOUS`/`INCONSISTENT` do $KB_t$ UNSAT; bước `CONTRADICTED` giữ ô đã gửi). |
+| `verdict` | `Status` | Phán quyết `CRIMINAL` / `INNOCENT`, hoặc `Status.UNKNOWN` ở bước kết thúc `AMBIGUOUS`/`INCONSISTENT` do $KB_t$ UNSAT (bước `CONTRADICTED` giữ verdict đã gửi). |
+| `verdict_code` | `VerdictCode` | `ACCEPTED` khi hợp lệ; `NOT_PROVABLE` ở bước kết thúc `AMBIGUOUS`; `INCONSISTENT` ở bước kết thúc `INCONSISTENT`; hoặc `CONTRADICTED` (engine bác verdict agent đã chứng minh bắt buộc, kết cục quy về `INCONSISTENT`). |
 | `revealed_clue` | `Optional[Clue]` | Manh mối mới vừa được Game Engine lật mở sau khi `ACCEPTED` (hoặc `None` nếu không lật thẻ). |
 | `cnf_stats` | `Optional[CNFStats]` | Thống kê `num_primary_vars`, `num_aux_vars`, `num_clauses`, `encoding_strategy` của $KB_t$. |
 
@@ -434,7 +434,7 @@ Toàn bộ các điểm mở trước GĐ 0 đã được chốt trong `Source/c
 | 2 | `HintResult` (`models.py`) & UX Hint | Chốt `HintResult(cell, forced_status, relevant_clue_ids, message, is_inconsistent)` với thông điệp tiếng Việt. |
 | 3 | `UniquenessResult` (`models.py`) | Chốt `is_unique`, `solution_count_status` (`"UNIQUE" | "UNSAT" | "MULTIPLE"`), `first_model`, `second_model`, `metrics_first`, `metrics_second`; mã hóa bằng `encode_kb` trên `PublicState` tổng hợp. |
 | 4 | Animation `run_auto_solve` (FAQ #4) | Dùng callback `on_step: Callable[[DeductionStep], None] | None = None`, gọi cho cả bước kết thúc và bọc bảo vệ ngoại lệ; trả về `list[DeductionStep]` và lưu `last_outcome`. |
-| 5 | Trạng thái dừng khi kẹt | Dùng `AutoSolveOutcome` (`SOLVED`, `AMBIGUOUS`, `INCONSISTENT`) và `outcome_of(steps, final_state)`; bước kết thúc `AMBIGUOUS` dùng `VerdictCode.NOT_PROVABLE`, `INCONSISTENT` dùng `VerdictCode.INCONSISTENT`. |
+| 5 | Trạng thái dừng khi kẹt | Dùng `AutoSolveOutcome` (`SOLVED`, `AMBIGUOUS`, `INCONSISTENT`) và `outcome_of(steps, final_state)`; bước kết thúc `AMBIGUOUS` dùng `VerdictCode.NOT_PROVABLE`, `INCONSISTENT` dùng `VerdictCode.INCONSISTENT` (hoặc `CONTRADICTED` khi engine bác verdict đã chứng minh). |
 | 6 | `assumptions` & `model` (`ISATSolver`) | `assumptions: Sequence[int] = ()`; `SATResult.model` hoàn thiện mọi biến `1..num_vars` trong `DPLLSolver`. |
 | 7 | Phạm vi phân loại & chọn nước đi | Phân loại toàn bộ ô chưa mở theo row-major (`classify_all`) và chọn ô bị ép buộc đầu tiên theo thứ tự row-major ở mỗi bước. |
 | 8 | Đầu vào `check_uniqueness` | Kiểm tra trên toàn bộ tập `clues` qua `PublicState` tổng hợp với `proved_verdicts` rỗng. |

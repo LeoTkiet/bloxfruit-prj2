@@ -186,3 +186,44 @@ def test_tc_cache_04_isolation_unsat_and_lru_bound() -> None:
     for idx in range(4):
         st = make_public_state(2, puzzle_id=f"lru_{idx}", proved_verdicts={"A1": Status.CRIMINAL})
         assert cache.get(make_kb_key(st)) is None
+
+
+def test_kb_cache_hit_on_reused_agent_marks_queries_cached() -> None:
+    """Reusing one agent (get_hint -> Auto Solve) must not re-log KB-cache hits as real SAT calls."""
+    path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
+    agent = DeductiveLogicAgent(StubCNFEncoder(), make_solver())
+    engine = GameEngine(logic_agent=agent)
+    engine.load_puzzle(path)
+
+    agent.get_hint(engine.get_public_state())
+    calls_after_hint = agent.stats.deduction_sat_calls
+    assert calls_after_hint > 0
+
+    steps = agent.run_auto_solve(engine)
+    assert agent.last_outcome == AutoSolveOutcome.SOLVED
+    assert steps[0].sat_queries
+    assert all(q.cached for q in steps[0].sat_queries)
+    assert all(q.metrics == SATMetrics() for q in steps[0].sat_queries)
+
+    # Real (uncached) queries logged in the trace equal the SAT calls actually run by auto-solve.
+    real_logged = sum(1 for s in steps for q in s.sat_queries if not q.cached)
+    assert real_logged == agent.stats.deduction_sat_calls - calls_after_hint
+
+
+def test_prechecked_consistency_query_is_logged_cached_with_empty_metrics() -> None:
+    """check_consistency -> Auto Solve: the reused KB query is cached, not a second real call."""
+    path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
+    agent = DeductiveLogicAgent(StubCNFEncoder(), make_solver())
+    engine = GameEngine(logic_agent=agent)
+    engine.load_puzzle(path)
+
+    agent.check_consistency(engine.get_public_state())
+    calls_after_check = agent.stats.deduction_sat_calls
+
+    steps = agent.run_auto_solve(engine)
+    kb_query = steps[0].sat_queries[0]
+    assert kb_query.cell == "KB"
+    assert kb_query.cached is True
+    assert kb_query.metrics == SATMetrics()
+    real_logged = sum(1 for s in steps for q in s.sat_queries if not q.cached)
+    assert real_logged == agent.stats.deduction_sat_calls - calls_after_check

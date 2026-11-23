@@ -111,7 +111,7 @@ Toàn bộ 6 nhóm chỉ số bắt buộc trong `description.md 2.7` và `AI - 
 | **6** | **Thời gian thực thi (Runtime)** | `total_runtime_ms`, `solver_runtime_ms` | `total_runtime_ms`: đo bằng `time.perf_counter()` cho toàn bộ phiên chạy `run_auto_solve` (gồm mã hóa CNF + Entailment/Caching + DPLL + cập nhật `GameEngine`, không có delay GUI). `solver_runtime_ms`: tổng `SATMetrics.runtime_ms` cộng dồn từ bộ giải DPLL `(description.md 2.4, plan.md 1.1)`. | Đánh giá tốc độ phản hồi thực tế (ms) và phân tách chi phí thời gian giữa mã hóa/Agent với lõi tìm kiếm DPLL (**RQ1–RQ4**). |
 
 **Chỉ số ngữ cảnh bổ sung & chỉ số dẫn xuất (tách bạch rõ nguồn sinh):**
-- **Cột ngữ cảnh trong `benchmark_raw.csv`:** `max_region_size` (kích thước vùng $\|R\|$ lớn nhất xuất hiện trong các clue đếm đã lật của màn chơi, phục vụ trực tiếp **RQ2**), `terminal_status`, `solved_cells`, `total_cells`.
+- **Cột ngữ cảnh trong `benchmark_raw.csv`:** `max_region_size` (kích thước vùng $\|R\|$ lớn nhất trong toàn bộ clue của màn chơi; là thuộc tính của màn chơi nên giống nhau ở mọi cấu hình và mọi `terminal_status`, kể cả `SKIPPED_NO_ENCODER`/`TIMEOUT`/`ERROR`; phục vụ trực tiếp **RQ2**), `terminal_status`, `solved_cells`, `total_cells`.
 - **Cột dẫn xuất trong `benchmark_summary.csv` (tổng hợp qua `R` lần lặp & kiểm tra chéo):** `repeats`, `deterministic_check`, `cross_config_consistency`, `solver_runtime_ms_median` / `_mean` / `_std`, `total_runtime_ms_median` / `_mean` / `_std`.
 - **Chỉ số dẫn xuất ở mức báo cáo (không phải cột trong `benchmark_raw.csv`):**
   - `solved_rate`: tỷ lệ giải thành công theo cấu hình (`số màn SOLVED / tổng số màn chuẩn`), tính từ `terminal_status`.
@@ -151,7 +151,7 @@ Dữ liệu benchmark được lưu tại `Source/experiments/results/` `(plan.m
 | 3 | `dataset_group` | `enum(string)` | — | Không | `standard` (10 puzzle chuẩn), `extension` (3 màn mở rộng) hoặc `edge_case` (2 ca biên). |
 | 4 | `grid_size` | `int` | ô/cạnh | Không | Kích thước cạnh lưới $N \in \{3, 4, 5\}$. |
 | 5 | `initial_revealed` | `int` | thẻ | Không | Số thẻ mở sẵn ban đầu ở $KB_0$ `(FAQ #8)`. |
-| 6 | `max_region_size` | `int` | ô | Không | Kích thước vùng $\|R\|$ lớn nhất trong các clue đếm đã lật của màn chơi (phục vụ phân tích **RQ2** theo $\|R\|$ thực). |
+| 6 | `max_region_size` | `int` | ô | Không | Kích thước vùng $\|R\|$ lớn nhất trong toàn bộ clue của màn chơi (thuộc tính màn chơi, giống nhau ở mọi cấu hình/trạng thái; để trống `""` nếu màn chưa qua validate có vùng không hợp lệ; phục vụ phân tích **RQ2** theo $\|R\|$ thực). |
 | 7 | `config_id` | `string` | — | Không | Mã cấu hình trong ma trận Phần 3 (`C0`..`C7`). |
 | 8 | `encoding` | `enum(string)` | — | Không | Chiến lược mã hóa đếm: `direct` hoặc `sinz` `(plan.md 2.2)`. |
 | 9 | `heuristic` | `enum(string)` | — | Không | Heuristic chọn biến DPLL: `lexicographic`, `moms`, `jw` `(plan.md 2.3)`. |
@@ -308,6 +308,7 @@ Bảng 5.2 tổng hợp đầy đủ các nhóm chỉ số bắt buộc (`AI - P
 *(Chèn **Hình E1** — 2 biểu đồ con so sánh biến và mệnh đề CNF Direct vs. Sinz tại đây: `[chờ biểu đồ GĐ 3B]`.)*
 
 **Khung nhận xét (RQ2 – Direct vs. Sinz theo kích thước vùng $\|R\|$ thực):**
+- *Ghi chú cách tính:* `max_region_size` lấy $\max |R|$ trên mọi clue có vùng của màn chơi. Trên 10 màn chuẩn, giá trị này trùng với $\max |R|$ của các clue đếm (`AT_LEAST`/`AT_MOST`/`EXACTLY`); ở `extensions/` nó có thể đến từ `PARITY` hoặc `COMPARE_COUNTS`, nên khi đối chiếu Direct vs. Sinz trên `extensions/` cần xem vùng lớn nhất thuộc loại clue nào.
 - Theo `description.md 2.3`, ở mọi kích thước lưới (`3×3`, `4×4`, `5×5`), các vùng cơ bản đều có kích thước nhỏ (`ROW`/`COL` $\le N \le 5$, `NEIGHBORS` $\le 8$). Vì vậy sự khác biệt giữa Direct và Sinz phụ thuộc chủ yếu vào **kích thước vùng $\|R\|$ thực tế của từng clue** (`max_region_size`) và giá trị $k$, chứ không đơn thuần theo kích thước lưới $N$.
 - Trên các clue có vùng nhỏ ($\|R\| \le 5$, như `ROW`/`COL`), Direct không phát sinh biến phụ đếm và số mệnh đề tổ hợp nhỏ (`[chờ kết quả benchmark GĐ 3B]`), trong khi Sinz thêm biến phụ ở cả hai chiều `AT_MOST(k)` và `AT_LEAST(k)` (`AT_MOST(\|R\|−k)` trên literal phủ định).
 - Trên vùng `NEIGHBORS` ở ô trong ($\|R\| = 8$), với `EXACTLY(k, R)`, Direct sinh $\binom{8}{k+1} + \binom{8}{9-k}$ mệnh đề và **đạt đỉnh tại $k = 4$ với $56 + 56 = 112$ mệnh đề**. Khi màn chơi chứa các vùng lớn hơn (`EXPLICIT` nhiều ô hoặc `BOUNDARY` với 8/12/16 ô nếu cài đặt), số mệnh đề Direct tăng theo tổ hợp $\binom{\|R\|}{k+1} + \binom{\|R\|}{\|R\|-k+1}$, trong khi Sinz giữ mức $O(\|R\|\cdot k)$ cho `AT_MOST(k)` và $O(\|R\|\cdot(\|R\|-k))$ cho `AT_LEAST(k)`.

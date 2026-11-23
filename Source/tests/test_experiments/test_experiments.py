@@ -210,6 +210,120 @@ def test_sinz_config_records_skipped_no_encoder(tmp_path: Path) -> None:
     assert summary_rows[0]["cross_config_consistency"] == "NA"
 
 
+def test_repeats_deterministic_check_and_puzzle_level_max_region(tmp_path: Path) -> None:
+    """repeats=2 covers `deterministic_check`; `max_region_size` is puzzle-level for every row."""
+    puzzle_path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
+    configs = select_configs(["C0", "C5"])
+    raw_rows, summary_rows, _ = run_benchmark(
+        configs=configs,
+        puzzles=[("standard", puzzle_path)],
+        repeats=2,
+        timeout_s=15.0,
+        out_dir=tmp_path,
+    )
+
+    c0_raw = [r for r in raw_rows if r["config_id"] == "C0"]
+    assert [int(r["repeat_idx"]) for r in c0_raw] == [1, 2]
+    by_cfg = {r["config_id"]: r for r in summary_rows}
+    assert by_cfg["C0"]["deterministic_check"] == "PASS"
+
+    # Same puzzle -> same max_region_size, whether the run was SOLVED or SKIPPED_NO_ENCODER.
+    sizes = {r["max_region_size"] for r in raw_rows}
+    assert len(sizes) == 1
+    (size,) = sizes
+    assert isinstance(size, int) and size > 0
+    assert by_cfg["C0"]["max_region_size"] == by_cfg["C5"]["max_region_size"] == size
+
+
+def test_run_with_timeout_reports_error_on_broken_queue(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A queue read error from a dying worker yields an ERROR row and still closes the queue."""
+    import experiments.benchmark as bm
+
+    class _BrokenQueue:
+        closed = False
+
+        def get(self, timeout: float | None = None) -> Any:
+            raise EOFError("pipe closed")
+
+        def close(self) -> None:
+            _BrokenQueue.closed = True
+
+    class _DeadProcess:
+        exitcode = 1
+
+        def __init__(self, *a: Any, **k: Any) -> None:
+            pass
+
+        def start(self) -> None:
+            pass
+
+        def is_alive(self) -> bool:
+            return False
+
+        def join(self, timeout: float | None = None) -> None:
+            pass
+
+        def terminate(self) -> None:
+            pass
+
+    class _FakeCtx:
+        Queue = _BrokenQueue
+        Process = _DeadProcess
+
+    monkeypatch.setattr(bm.multiprocessing, "get_context", lambda method: _FakeCtx())
+    res = bm.run_with_timeout(Path("unused.json"), select_configs(["C0"])[0], timeout_s=1.0)
+
+    assert res["terminal_status"] == "ERROR"
+    assert "EOFError" in res["error_message"]
+    assert _BrokenQueue.closed is True
+
+
+def test_puzzle_max_region_size_blank_for_invalid_region() -> None:
+    """An invalid region in an unvalidated puzzle gives "" instead of aborting the benchmark."""
+    from types import SimpleNamespace
+
+    from core.contracts.models import RegionSpec, RegionType
+    from experiments.benchmark import _puzzle_max_region_size
+
+    bad_clue = SimpleNamespace(region=RegionSpec(region_type=RegionType.ROW, row=99), region_b=None)
+    puzzle = SimpleNamespace(grid_size=3, characters=(SimpleNamespace(hidden_clue=bad_clue),))
+    assert _puzzle_max_region_size(puzzle) == ""
+
+
+def test_max_region_size_counts_hidden_clues_and_fills_timeout_rows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Early stop (INCONSISTENT at step 0) and TIMEOUT rows still get the puzzle-level size."""
+    import experiments.benchmark as bm
+
+    # Initially revealed clues have |R| = 3; a hidden NEIGHBORS clue on B2 has |R| = 8.
+    puzzle_path = PUZZLES_DIR / "edge_cases" / "edge_3x3_02_inconsistent.json"
+    raw_rows, _, _ = run_benchmark(
+        configs=select_configs(["C0"]),
+        puzzles=[("edge", puzzle_path)],
+        repeats=1,
+        timeout_s=15.0,
+        out_dir=tmp_path / "real",
+    )
+    assert raw_rows[0]["terminal_status"] == "INCONSISTENT"
+    assert raw_rows[0]["max_region_size"] == 8
+
+    monkeypatch.setattr(
+        bm,
+        "run_with_timeout",
+        lambda *a, **k: {"terminal_status": "TIMEOUT", "verdict_trace": ()},
+    )
+    raw_rows, _, _ = run_benchmark(
+        configs=select_configs(["C0"]),
+        puzzles=[("edge", puzzle_path)],
+        repeats=1,
+        timeout_s=15.0,
+        out_dir=tmp_path / "timeout",
+    )
+    assert raw_rows[0]["terminal_status"] == "TIMEOUT"
+    assert raw_rows[0]["max_region_size"] == 8
+
+
 def test_windows_multiprocessing_timeout_returns_timeout() -> None:
     puzzle_path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
     cfg = select_configs(["C0"])[0]

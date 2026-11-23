@@ -340,3 +340,31 @@ def test_integration_all_13_solvable_puzzles_with_real_engine_and_dpll(
     assert outcome_of(steps, final_state) == AutoSolveOutcome.SOLVED
     assert all(s.verdict_code == VerdictCode.ACCEPTED for s in steps)
     assert agent.stats.validation_sat_calls == 0
+
+
+def test_engine_contradicted_on_proved_verdict_is_inconsistent() -> None:
+    """Engine CONTRADICTED on a verdict the agent proved forced -> INCONSISTENT, not AMBIGUOUS."""
+    puzzle_path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
+    agent = DeductiveLogicAgent(StubCNFEncoder(), make_solver())
+    real_engine = GameEngine(logic_agent=agent)
+    real_engine.load_puzzle(puzzle_path)
+
+    def contradict_verdict(cell: CellID, status: Status, eng: IGameEngine) -> VerdictResponse:
+        return VerdictResponse(
+            code=VerdictCode.CONTRADICTED,
+            cell=cell,
+            submitted_status=status,
+            public_state=eng.get_public_state(),
+            revealed_clue=None,
+            message="Forced contradiction",
+        )
+
+    trap = IsolationTrapGameEngine(real_engine, override_submit=contradict_verdict)
+    steps = agent.run_auto_solve(trap)
+
+    assert len(steps) == 1
+    assert steps[0].verdict_code == VerdictCode.CONTRADICTED
+    assert steps[0].cell is not None
+    assert steps[0].verdict != Status.UNKNOWN
+    assert agent.last_outcome == AutoSolveOutcome.INCONSISTENT
+    assert outcome_of(steps, real_engine.get_public_state()) == AutoSolveOutcome.INCONSISTENT

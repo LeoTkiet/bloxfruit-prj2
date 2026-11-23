@@ -16,6 +16,9 @@ from typing import Literal, Sequence
 
 BranchingHeuristic = Literal["lexicographic", "moms", "jw"]
 
+# Precomputed powers of 2 for clause length weights in Jeroslow-Wang
+_POW2: tuple[float, ...] = tuple(2.0 ** (-k) for k in range(101))
+
 
 @dataclass(frozen=True)
 class DPLLConfig:
@@ -76,6 +79,8 @@ def lexicographic_heuristic(
 ) -> tuple[int, bool]:
     """Pick the smallest variable index deterministically.
 
+    Complexity: O(n) scan over unassigned variable sequence.
+
     Args:
         unassigned_vars: List/set of unassigned variables.
         default_polarity: Value to branch first.
@@ -95,10 +100,12 @@ def moms_heuristic(
 ) -> tuple[int, bool]:
     """Maximum Occurrences in clauses of Minimum Size (MOM's heuristic).
 
-    Identifies the minimum active size `k` among unsatisfied clauses, then scores
-    unassigned variables based on occurrences in clauses of size `k`.
-    Score function: (pos[v] + neg[v]) * 2^k + pos[v] * neg[v].
+    Identifies the minimum active size `min_len` among unsatisfied clauses, then scores
+    unassigned variables based on occurrences in clauses of size `min_len`.
+    Score function variant: (pos[v] + neg[v]) * 2^min_len + pos[v] * neg[v], where the
+    2^min_len factor dynamically scales with the tightest active constraint size.
     Ties broken deterministically by smallest variable index.
+    Polarity tie-break: if pos == neg > 0, obeys `default_polarity`.
     """
     # Filter active literals for each unresolved clause
     clause_active_lits: list[list[int]] = []
@@ -141,8 +148,8 @@ def moms_heuristic(
         if score > best_score:
             best_score = score
             best_var = v
-            # Branch first on polarity with more occurrences
-            best_polarity = (p >= n) if (p + n > 0) else default_polarity
+            # Branch first on polarity with more occurrences, tie-break by default_polarity
+            best_polarity = (p > n) if p != n else default_polarity
 
     return best_var, best_polarity
 
@@ -158,20 +165,17 @@ def jw_heuristic(
     Assigns weight 2^(-|clause|) to each active literal in unsatisfied clauses.
     For variable v, score = J(v) + J(-v).
     Ties broken deterministically by smallest variable index.
-    Branches first on the literal with higher J value.
+    Branches first on the literal with higher J value (tie-break by default_polarity).
     """
     j_pos: dict[int, float] = {v: 0.0 for v in unassigned_vars}
     j_neg: dict[int, float] = {v: 0.0 for v in unassigned_vars}
-
-    # Powers of 2 cache for small clause lengths
-    pow2: dict[int, float] = {k: 2.0 ** (-k) for k in range(1, 100)}
 
     for clause in unresolved_clauses:
         active = [lit for lit in clause if assignment[abs(lit)] is None]
         k = len(active)
         if k == 0:
             continue
-        w = pow2.get(k, 2.0 ** (-k))
+        w = _POW2[k] if k < len(_POW2) else (2.0 ** (-k))
         for lit in active:
             v = abs(lit)
             if v in j_pos:
@@ -189,7 +193,9 @@ def jw_heuristic(
         if score > best_score:
             best_score = score
             best_var = v
-            best_polarity = (j_pos[v] >= j_neg[v]) if score > 0 else default_polarity
+            p_val = j_pos[v]
+            n_val = j_neg[v]
+            best_polarity = (p_val > n_val) if p_val != n_val else default_polarity
 
     return best_var, best_polarity
 

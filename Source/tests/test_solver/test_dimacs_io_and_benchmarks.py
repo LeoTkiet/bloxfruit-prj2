@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from core.contracts.models import CNFFormula
 from solver.dimacs_io import (
     parse_dimacs_cnf,
@@ -69,6 +70,36 @@ def test_dimacs_file_io(tmp_path: Path) -> None:
     loaded_cnf = read_dimacs_file(file_path)
     assert loaded_cnf.clauses == cnf.clauses
     assert loaded_cnf.num_vars == 3
+
+
+def test_dimacs_satlib_percent_marker() -> None:
+    """Handle SATLIB trailing % and 0 delimiters gracefully."""
+    satlib_text = "c SATLIB benchmark\np cnf 2 1\n1 2 0\n%\n0\n"
+    clauses, num_vars = parse_dimacs_cnf(satlib_text)
+    assert clauses == ((1, 2),)
+    assert num_vars == 2
+
+
+def test_dimacs_missing_header_raises() -> None:
+    """Missing problem line 'p cnf' must raise ValueError."""
+    with pytest.raises(ValueError, match="Missing problem line"):
+        parse_dimacs_cnf("")
+
+    with pytest.raises(ValueError, match="Clause content encountered before"):
+        parse_dimacs_cnf("1 2 0\n")
+
+
+def test_dimacs_clause_count_mismatch_raises() -> None:
+    """Header declaring more or fewer clauses than actually present must raise ValueError."""
+    text_mismatch = "p cnf 2 3\n1 2 0\n-1 0\n"
+    with pytest.raises(ValueError, match="Clause count mismatch"):
+        parse_dimacs_cnf(text_mismatch)
+
+
+def test_dimacs_malformed_problem_line_raises() -> None:
+    """Problem line with extra or missing tokens must raise ValueError."""
+    with pytest.raises(ValueError, match="Expected exactly 4 tokens"):
+        parse_dimacs_cnf("p cnf 2 1 extra\n1 2 0\n")
 
 
 def test_pigeonhole_unsat_php_3_2() -> None:

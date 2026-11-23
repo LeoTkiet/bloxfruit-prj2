@@ -10,7 +10,8 @@ Davis-Putnam-Logemann-Loveland (DPLL) procedure:
 6. Exact performance metrics recording: decisions, propagations, backtracks, runtime_ms.
 
 In addition, it provides:
-- Safe and non-destructive assumptions handling.
+- Safe, non-destructive assumptions handling.
+- Efficient preprocessed clause caching across repeated queries on identical formulas.
 - Configurable branching heuristics and pure-literal elimination.
 - Full compliance with `core.contracts.interfaces.ISATSolver`.
 """
@@ -19,22 +20,14 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Mapping, Optional, Sequence
+from typing import Optional, Sequence
 
-from core.contracts.interfaces import ISATSolver
 from core.contracts.models import CNFFormula, SATMetrics, SATResult
 from solver.heuristics import (
     DPLLConfig,
     find_pure_literals,
     select_branching_variable,
 )
-
-# Increase recursion depth to accommodate deep backtracking trees safely
-if sys.getrecursionlimit() < 10000:
-    try:
-        sys.setrecursionlimit(10000)
-    except Exception:
-        pass
 
 
 class DPLLSolver:
@@ -49,8 +42,11 @@ class DPLLSolver:
         """
         self.config: DPLLConfig = config or DPLLConfig()
 
+        # Cache preprocessed clauses by formula id for repeated queries on same CNF
+        self._cleaned_cache: dict[int, tuple[tuple[tuple[int, ...], ...], bool, int]] = {}
+
         # Internal state reset per solve invocation
-        self._clauses: list[tuple[int, ...]] = []
+        self._clauses: tuple[tuple[int, ...], ...] = ()
         self._num_vars: int = 0
         self._assignment: list[Optional[bool]] = []
         self._unassigned_vars: set[int] = set()
@@ -76,69 +72,24 @@ class DPLLSolver:
         Returns:
             `SATResult` containing `is_sat`, complete `model` (if SAT),
             and `metrics` (decisions, propagations, backtracks, runtime_ms).
+
+        Raises:
+            ValueError: If literal 0 is encountered in clauses or assumptions.
         """
         start_time = time.perf_counter()
 
-        # Determine variable domain: max of declared variables, clause literals, and assumptions
-        max_var = cnf.num_vars
-        for clause in cnf.clauses:
-            for lit in clause:
-                abs_lit = abs(lit)
-                if abs_lit > max_var:
-                    max_var = abs_lit
-        for lit in assumptions:
-            abs_lit = abs(lit)
-            if abs_lit > max_var:
-                max_var = abs_lit
+        # Safely accommodate deep backtracking trees if needed
+        if sys.getrecursionlimit() < 10000:
+            try:
+                sys.setrecursionlimit(10000)
+            except Exception:
+                pass
 
-        self._num_vars = max(max_var, 1)
-
-        # 1-indexed partial assignment: [None, assign_1, assign_2, ..., assign_num_vars]
-        self._assignment = [None] * (self._num_vars + 1)
-        self._unassigned_vars = set(range(1, self._num_vars + 1))
-        self._trail = []
-
-        self._decisions = 0
-        self._propagations = 0
-        self._backtracks = 0
-
-        # Preprocess clauses: eliminate duplicates within clause and drop tautologies
-        cleaned_clauses: list[tuple[int, ...]] = []
-        has_initial_empty_clause = False
-
-        for raw_clause in cnf.clauses:
-            if len(raw_clause) == 0:
-                has_initial_empty_clause = True
-                break
-            # Remove duplicate literals while preserving order
-            unique_lits = tuple(dict.fromkeys(raw_clause))
-            # Check for tautology: contains both lit and -lit
-            lit_set = set(unique_lits)
-            if any(-l in lit_set for l in unique_lits):
-                continue
-            cleaned_clauses.append(unique_lits)
-
-        if has_initial_empty_clause:
-            # Formula is unconditionally unsatisfiable
-            self._backtracks = 1
-            runtime_ms = (time.perf_counter() - start_time) * 1000.0
-            return SATResult(
-                is_sat=False,
-                model=None,
-                metrics=SATMetrics(
-                    decisions=0,
-                    propagations=0,
-                    backtracks=1,
-                    runtime_ms=round(runtime_ms, 3),
-                ),
-            )
-
-        self._clauses = cleaned_clauses
-
-        # Apply assumptions at root level (level 0)
-        # Check for self-contradiction in assumptions first
+        # Validate assumptions and check for literal 0
         seen_assumptions: set[int] = set()
         for lit in assumptions:
+            if lit == 0:
+                raise ValueError("Literal 0 is invalid in assumptions.")
             if -lit in seen_assumptions:
                 # Contradictory assumptions: e.g. [1, -1]
                 self._backtracks = 1
@@ -150,32 +101,102 @@ class DPLLSolver:
                         decisions=0,
                         propagations=0,
                         backtracks=1,
-                        runtime_ms=round(runtime_ms, 3),
+                        runtime_ms=runtime_ms,
                     ),
                 )
             seen_assumptions.add(lit)
 
-        # Assign assumptions
+        # Preprocess / retrieve cached cleaned clauses
+        cnf_key = id(cnf.clauses)
+        cached = self._cleaned_cache.get(cnf_key)
+
+        if cached is not None:
+            cleaned_clauses, has_initial_empty_clause, max_clause_var = cached
+        else:
+            cleaned_list: list[tuple[int, ...]] = []
+            has_initial_empty_clause = False
+            max_clause_var = 0
+
+            for raw_clause in cnf.clauses:
+                if len(raw_clause) == 0:
+                    has_initial_empty_clause = True
+                    break
+
+                for lit in raw_clause:
+                    if lit == 0:
+                        raise ValueError("Literal 0 is invalid in CNF clauses.")
+                    abs_l = abs(lit)
+                    if abs_l > max_clause_var:
+                        max_clause_var = abs_l
+
+                # Remove duplicate literals while preserving order
+                unique_lits = tuple(dict.fromkeys(raw_clause))
+                lit_set = set(unique_lits)
+                # Tautology elimination: clause contains both lit and -lit
+                if any(-l in lit_set for l in unique_lits):
+                    continue
+                cleaned_list.append(unique_lits)
+
+            cleaned_clauses = tuple(cleaned_list)
+            # Store in cache (keep cache size bounded)
+            if len(self._cleaned_cache) > 256:
+                self._cleaned_cache.clear()
+            self._cleaned_cache[cnf_key] = (cleaned_clauses, has_initial_empty_clause, max_clause_var)
+
+        # Determine variable domain
+        max_var = max(cnf.num_vars, max_clause_var)
+        for lit in assumptions:
+            abs_l = abs(lit)
+            if abs_l > max_var:
+                max_var = abs_l
+
+        self._num_vars = max_var
+        self._clauses = cleaned_clauses
+
+        # Reset counters
+        self._decisions = 0
+        self._propagations = 0
+        self._backtracks = 0
+
+        # Fast path 1: Initial empty clause -> immediate UNSAT
+        if has_initial_empty_clause:
+            self._backtracks = 1
+            runtime_ms = (time.perf_counter() - start_time) * 1000.0
+            return SATResult(
+                is_sat=False,
+                model=None,
+                metrics=SATMetrics(
+                    decisions=0,
+                    propagations=0,
+                    backtracks=1,
+                    runtime_ms=runtime_ms,
+                ),
+            )
+
+        # Fast path 2: Zero-variable formula with no clauses -> trivially SAT with empty model
+        if self._num_vars == 0:
+            runtime_ms = (time.perf_counter() - start_time) * 1000.0
+            return SATResult(
+                is_sat=True,
+                model={},
+                metrics=SATMetrics(
+                    decisions=0,
+                    propagations=0,
+                    backtracks=0,
+                    runtime_ms=runtime_ms,
+                ),
+            )
+
+        # Initialize partial assignment: [None, assign_1, ..., assign_num_vars]
+        self._assignment = [None] * (self._num_vars + 1)
+        self._unassigned_vars = set(range(1, self._num_vars + 1))
+        self._trail = []
+
+        # Apply assumptions at decision level 0
         for lit in assumptions:
             var = abs(lit)
             val = lit > 0
-            curr = self._assignment[var]
-            if curr is not None:
-                if curr != val:
-                    # Inconsistent with prior assignment
-                    self._backtracks = 1
-                    runtime_ms = (time.perf_counter() - start_time) * 1000.0
-                    return SATResult(
-                        is_sat=False,
-                        model=None,
-                        metrics=SATMetrics(
-                            decisions=0,
-                            propagations=0,
-                            backtracks=1,
-                            runtime_ms=round(runtime_ms, 3),
-                        ),
-                    )
-            else:
+            if self._assignment[var] is None:
                 self._assign(var, val)
 
         # Run DPLL recursive procedure
@@ -184,12 +205,11 @@ class DPLLSolver:
         runtime_ms = (time.perf_counter() - start_time) * 1000.0
 
         if is_sat:
-            # Build complete assignment: fill any remaining unassigned variables with False
-            complete_model: dict[int, bool] = {}
-            for v in range(1, self._num_vars + 1):
-                val = self._assignment[v]
-                complete_model[v] = val if val is not None else False
-
+            # Build complete assignment: unassigned variables default to False
+            complete_model: dict[int, bool] = {
+                v: (self._assignment[v] if self._assignment[v] is not None else False)
+                for v in range(1, self._num_vars + 1)
+            }
             return SATResult(
                 is_sat=True,
                 model=complete_model,
@@ -197,7 +217,7 @@ class DPLLSolver:
                     decisions=self._decisions,
                     propagations=self._propagations,
                     backtracks=self._backtracks,
-                    runtime_ms=round(runtime_ms, 3),
+                    runtime_ms=runtime_ms,
                 ),
             )
         else:
@@ -208,7 +228,7 @@ class DPLLSolver:
                     decisions=self._decisions,
                     propagations=self._propagations,
                     backtracks=self._backtracks,
-                    runtime_ms=round(runtime_ms, 3),
+                    runtime_ms=runtime_ms,
                 ),
             )
 
@@ -230,7 +250,10 @@ class DPLLSolver:
             self._unassigned_vars.add(var)
 
     def _unit_propagate(self) -> bool:
-        """Iteratively identify and propagate unit clauses until fixpoint or conflict.
+        """Propagate unit clauses in passes until fixpoint or conflict.
+
+        Scans all clauses per round rather than breaking immediately, reducing
+        outer scans from O(#units * |F|) to typically 1-2 passes * |F|.
 
         Returns:
             True if fixpoint is reached without conflicts.
@@ -263,13 +286,12 @@ class DPLLSolver:
                     return False
 
                 if unassigned_count == 1:
-                    # Unit clause: single unassigned literal must be forced to True
+                    # Unit clause
                     v = abs(last_unassigned_lit)
-                    self._assign(v, last_unassigned_lit > 0)
-                    self._propagations += 1
-                    unit_found = True
-                    # Re-scan clauses with new unit assignment
-                    break
+                    if self._assignment[v] is None:
+                        self._assign(v, last_unassigned_lit > 0)
+                        self._propagations += 1
+                        unit_found = True
 
             if not unit_found:
                 break
@@ -305,32 +327,25 @@ class DPLLSolver:
             return False
 
         # 2. Pure-Literal Elimination (if enabled)
-        if self.config.enable_pure_literal and self._unassigned_vars:
-            unresolved = self._get_unresolved_clauses()
-            pure_lits = find_pure_literals(list(self._unassigned_vars), unresolved, self._assignment)
-            for lit in pure_lits:
-                v = abs(lit)
-                if self._assignment[v] is None:
-                    self._assign(v, lit > 0)
-            if pure_lits:
-                # Re-run unit propagation after assigning pure literals
-                if not self._unit_propagate():
-                    self._undo_to(trail_mark)
-                    return False
-
-        # 3. Check termination: are all clauses satisfied?
         unresolved = self._get_unresolved_clauses()
         if not unresolved:
-            # Every clause is satisfied
             return True
 
-        if not self._unassigned_vars:
-            # No unassigned variables left, but unresolved clauses remain
-            self._backtracks += 1
-            self._undo_to(trail_mark)
-            return False
+        if self.config.enable_pure_literal and self._unassigned_vars:
+            pure_lits = find_pure_literals(list(self._unassigned_vars), unresolved, self._assignment)
+            if pure_lits:
+                for lit in pure_lits:
+                    v = abs(lit)
+                    if self._assignment[v] is None:
+                        self._assign(v, lit > 0)
+                unresolved = self._get_unresolved_clauses()
+                if not unresolved:
+                    return True
 
-        # 4. Deterministic Variable Selection
+        if not self._unassigned_vars:
+            return True
+
+        # 3. Deterministic Variable Selection
         var, first_polarity = select_branching_variable(
             list(self._unassigned_vars),
             unresolved,
@@ -340,7 +355,7 @@ class DPLLSolver:
 
         self._decisions += 1
 
-        # 5. Recursive Branching & Backtracking
+        # 4. Recursive Branching & Backtracking
         # Try Branch 1: var = first_polarity
         branch_mark = len(self._trail)
         self._assign(var, first_polarity)

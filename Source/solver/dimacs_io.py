@@ -10,6 +10,7 @@ Format reference:
 - Lines starting with 'c' are comments.
 - Problem line: 'p cnf <nbvar> <nbclauses>'
 - Each clause is a whitespace-separated sequence of non-zero literals terminated by 0.
+- Trailing SATLIB metadata markers like '%' are handled cleanly.
 """
 
 from __future__ import annotations
@@ -30,12 +31,12 @@ def parse_dimacs_cnf(text: str) -> tuple[tuple[tuple[int, ...], ...], int]:
         tuple (clauses, num_vars) where clauses is a tuple of tuples of int literals.
 
     Raises:
-        ValueError: If the header is missing, malformed, or clause tokens are invalid.
+        ValueError: If header is missing/malformed, tokens are invalid, or clause count mismatches.
     """
     lines = text.splitlines()
     header_found = False
     num_vars = 0
-    num_clauses = 0
+    expected_clauses = 0
     clauses: list[tuple[int, ...]] = []
     current_clause: list[int] = []
 
@@ -44,25 +45,39 @@ def parse_dimacs_cnf(text: str) -> tuple[tuple[tuple[int, ...], ...], int]:
         if not stripped or stripped.startswith("c"):
             continue
 
+        # SATLIB trailing delimiter
+        if stripped.startswith("%"):
+            break
+
         if stripped.startswith("p"):
             if header_found:
                 raise ValueError("Duplicate problem line 'p cnf' encountered.")
             parts = stripped.split()
-            if len(parts) < 4 or parts[1] != "cnf":
-                raise ValueError(f"Malformed problem line: {stripped!r}")
+            if len(parts) != 4 or parts[1] != "cnf":
+                raise ValueError(
+                    f"Malformed problem line: {stripped!r}. Expected exactly 4 tokens 'p cnf <nbvar> <nbclauses>'."
+                )
             try:
                 num_vars = int(parts[2])
-                num_clauses = int(parts[3])
+                expected_clauses = int(parts[3])
             except ValueError as e:
                 raise ValueError(f"Invalid integer in problem line: {stripped!r}") from e
-            if num_vars < 0 or num_clauses < 0:
+            if num_vars < 0 or expected_clauses < 0:
                 raise ValueError(f"Negative numbers in problem line: {stripped!r}")
             header_found = True
             continue
 
+        # If clauses appear before problem line, error
+        if not header_found:
+            raise ValueError(f"Clause content encountered before 'p cnf' problem line: {stripped!r}")
+
         # Clause tokens line
         tokens = stripped.split()
+        stop_parsing = False
         for token in tokens:
+            if token == "%":
+                stop_parsing = True
+                break
             try:
                 lit = int(token)
             except ValueError as e:
@@ -73,14 +88,23 @@ def parse_dimacs_cnf(text: str) -> tuple[tuple[tuple[int, ...], ...], int]:
                 current_clause = []
             else:
                 current_clause.append(lit)
-                # Keep track of max variable seen in case problem line had smaller count
                 abs_lit = abs(lit)
                 if abs_lit > num_vars:
                     num_vars = abs_lit
 
+        if stop_parsing:
+            break
+
+    if not header_found:
+        raise ValueError("Missing problem line 'p cnf <nbvar> <nbclauses>'.")
+
     if current_clause:
-        # Some non-strict files omit the trailing 0 on the final line
         clauses.append(tuple(current_clause))
+
+    if len(clauses) != expected_clauses:
+        raise ValueError(
+            f"Clause count mismatch: header declared {expected_clauses} clauses, but parsed {len(clauses)}."
+        )
 
     return tuple(clauses), num_vars
 

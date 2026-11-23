@@ -38,6 +38,28 @@ def test_heuristics_selection_tie_breaking() -> None:
     assert pol is True
 
 
+def test_polarity_tie_breaking_obeys_default_polarity() -> None:
+    """When positive and negative occurrences are equal (p == n > 0), obey default_polarity."""
+    # Clauses where variable 1 has 1 positive and 1 negative occurrence of equal clause length
+    unassigned = [1]
+    clauses = [[1, 2], [-1, 3]]
+    assign = [None] * 4
+
+    # MOMs
+    _, pol_true = moms_heuristic(unassigned, clauses, assign, default_polarity=True)
+    assert pol_true is True
+
+    _, pol_false = moms_heuristic(unassigned, clauses, assign, default_polarity=False)
+    assert pol_false is False
+
+    # JW
+    _, jw_true = jw_heuristic(unassigned, clauses, assign, default_polarity=True)
+    assert jw_true is True
+
+    _, jw_false = jw_heuristic(unassigned, clauses, assign, default_polarity=False)
+    assert jw_false is False
+
+
 def test_solve_with_pure_literal_elimination() -> None:
     """Verify solver with pure-literal elimination solves correctly."""
     clauses = (

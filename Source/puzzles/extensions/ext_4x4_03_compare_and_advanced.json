@@ -1,0 +1,317 @@
+{
+  "puzzle_id": "ext_4x4_03",
+  "name": "Extension 3 - Compare Counts & Parity (4x4)",
+  "difficulty": "hard",
+  "grid_size": 4,
+  "initial_revealed": [
+    "B1",
+    "C2",
+    "A4"
+  ],
+  "tags": [
+    "4x4",
+    "extension",
+    "parity",
+    "compare_counts",
+    "advanced_regions"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Alice",
+      "profession": "Architect",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "BETWEEN",
+          "cells": [
+            "A1",
+            "A4"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in cells between A1 and A4."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bruno",
+      "profession": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "INTERSECTION",
+          "sub_regions": [
+            {
+              "type": "NEIGHBORS",
+              "center": "A2"
+            },
+            {
+              "type": "COL",
+              "col": "A"
+            }
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in intersection(neighbors of A2 ∩ column A)."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Celine",
+      "profession": "Chemist",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "PARITY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A2",
+            "A3",
+            "C4"
+          ]
+        },
+        "parity": "EVEN",
+        "text": "The number of Criminals in {A2, A3, C4} is EVEN."
+      }
+    },
+    {
+      "cell_id": "D1",
+      "name": "Dante",
+      "profession": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D1",
+        "type": "COMPARE_COUNTS",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "region_b": {
+          "type": "COL",
+          "col": "D"
+        },
+        "compare_op": "EQ",
+        "text": "Column c has the same number of Criminals as column D."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Elena",
+      "profession": "Engineer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "PARITY",
+        "region": {
+          "type": "ROW",
+          "row": 2
+        },
+        "parity": "EVEN",
+        "text": "The number of Criminals in row 2 is EVEN."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Felix",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "BOUNDARY"
+        },
+        "count": 5,
+        "text": "Exactly 5 Criminals in the boundary."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Grace",
+      "profession": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "PARITY",
+        "region": {
+          "type": "COMMON_NEIGHBORS",
+          "cells": [
+            "B1",
+            "D2"
+          ]
+        },
+        "parity": "ODD",
+        "text": "The number of Criminals in common neighbors of B1 and D2 is ODD."
+      }
+    },
+    {
+      "cell_id": "D2",
+      "name": "Hugo",
+      "profession": "Historian",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D2",
+        "type": "PARITY",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "parity": "EVEN",
+        "text": "The number of Criminals in column C is EVEN."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Iris",
+      "profession": "Inspector",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "COMMON_NEIGHBORS",
+          "cells": [
+            "C2",
+            "A4"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in common neighbors of C2 and A4."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Jude",
+      "profession": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "COMPARE_COUNTS",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "region_b": {
+          "type": "COL",
+          "col": "B"
+        },
+        "compare_op": "EQ",
+        "text": "Column a has the same number of Criminals as column B."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Kira",
+      "profession": "Librarian",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "INTERSECTION",
+          "sub_regions": [
+            {
+              "type": "NEIGHBORS",
+              "center": "C4"
+            },
+            {
+              "type": "ROW",
+              "row": 4
+            }
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in intersection(neighbors of C4 ∩ row 4)."
+      }
+    },
+    {
+      "cell_id": "D3",
+      "name": "Liam",
+      "profession": "Locksmith",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D3",
+        "type": "SAME",
+        "targets": [
+          "B2",
+          "C2"
+        ],
+        "text": "B2 and C2 have the same status."
+      }
+    },
+    {
+      "cell_id": "A4",
+      "name": "Mina",
+      "profession": "Mechanic",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A4",
+        "type": "PARITY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "D1"
+        },
+        "parity": "ODD",
+        "text": "The number of Criminals in neighbors of D1 is ODD."
+      }
+    },
+    {
+      "cell_id": "B4",
+      "name": "Nolan",
+      "profession": "Navigator",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B4",
+        "type": "PARITY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "C3"
+        },
+        "parity": "ODD",
+        "text": "The number of Criminals in neighbors of C3 is ODD."
+      }
+    },
+    {
+      "cell_id": "C4",
+      "name": "Olive",
+      "profession": "Optician",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C4",
+        "type": "PARITY",
+        "region": {
+          "type": "CORNERS"
+        },
+        "parity": "ODD",
+        "text": "The number of Criminals in the corners is ODD."
+      }
+    },
+    {
+      "cell_id": "D4",
+      "name": "Paul",
+      "profession": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D4",
+        "type": "COMPARE_COUNTS",
+        "region": {
+          "type": "COL",
+          "col": "B"
+        },
+        "region_b": {
+          "type": "COL",
+          "col": "D"
+        },
+        "compare_op": "EQ",
+        "text": "Column b has the same number of Criminals as column D."
+      }
+    }
+  ]
+}

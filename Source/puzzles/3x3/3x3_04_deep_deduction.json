@@ -1,0 +1,159 @@
+{
+  "puzzle_id": "3x3_04",
+  "name": "3x3 Puzzle 4 - Deep Deduction",
+  "difficulty": "hard",
+  "grid_size": 3,
+  "initial_revealed": [
+    "A2",
+    "C2"
+  ],
+  "tags": [
+    "3x3",
+    "core"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Alice",
+      "profession": "Architect",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "FACT",
+        "target": "B1",
+        "target_status": "CRIMINAL",
+        "text": "B1 is a Criminal."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bruno",
+      "profession": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 1,
+        "text": "At least 1 Criminal in column A."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Celine",
+      "profession": "Chemist",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column C."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Dante",
+      "profession": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "C1",
+            "C2"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {C1, C2}."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Elena",
+      "profession": "Engineer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "C3"
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in neighbors of C3."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Felix",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 2
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in row 2."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Grace",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "AT_MOST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in column A."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Hugo",
+      "profession": "Historian",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "SAME",
+        "targets": [
+          "B1",
+          "C2"
+        ],
+        "text": "B1 and C2 have the same status."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Iris",
+      "profession": "Inspector",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "DIFFERENT",
+        "targets": [
+          "A3",
+          "C3"
+        ],
+        "text": "A3 and C3 have different statuses."
+      }
+    }
+  ]
+}

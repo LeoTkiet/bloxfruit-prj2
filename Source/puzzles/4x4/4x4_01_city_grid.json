@@ -1,0 +1,281 @@
+{
+  "puzzle_id": "4x4_01",
+  "name": "4x4 Puzzle 1 - City Grid",
+  "difficulty": "medium",
+  "grid_size": 4,
+  "initial_revealed": [
+    "A1",
+    "D1",
+    "B3"
+  ],
+  "tags": [
+    "4x4",
+    "core"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Abel",
+      "profession": "Astronaut",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "AT_MOST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "A4"
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in neighbors of A4."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bea",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "SAME",
+        "targets": [
+          "A1",
+          "A3"
+        ],
+        "text": "A1 and A3 have the same status."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Clara",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B1",
+            "A2",
+            "D2"
+          ]
+        },
+        "count": 3,
+        "text": "Exactly 3 Criminals in {B1, A2, D2}."
+      }
+    },
+    {
+      "cell_id": "D1",
+      "name": "Derek",
+      "profession": "Cook",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B2",
+            "C2",
+            "B4"
+          ]
+        },
+        "count": 0,
+        "text": "No one in {B2, C2, B4} is a Criminal."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Eliza",
+      "profession": "Detective",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "COL",
+          "col": "D"
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in column D."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Franz",
+      "profession": "Detective",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "D3"
+        },
+        "count": 3,
+        "text": "At least 3 Criminals in neighbors of D3."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Grant",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B1",
+            "A4"
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in {B1, A4}."
+      }
+    },
+    {
+      "cell_id": "D2",
+      "name": "Hannah",
+      "profession": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D2",
+        "type": "SAME",
+        "targets": [
+          "C1",
+          "C2"
+        ],
+        "text": "C1 and C2 have the same status."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Ivy",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "DIFFERENT",
+        "targets": [
+          "A4",
+          "B4"
+        ],
+        "text": "A4 and B4 have different statuses."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Jonas",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "ROW",
+          "row": 2
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in row 2."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Karl",
+      "profession": "Painter",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column A."
+      }
+    },
+    {
+      "cell_id": "D3",
+      "name": "Leo",
+      "profession": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D3",
+        "type": "DIFFERENT",
+        "targets": [
+          "D1",
+          "C2"
+        ],
+        "text": "D1 and C2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "A4",
+      "name": "Mara",
+      "profession": "Astronaut",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A4",
+        "type": "DIFFERENT",
+        "targets": [
+          "C2",
+          "D2"
+        ],
+        "text": "C2 and D2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "B4",
+      "name": "Noah",
+      "profession": "Clerk",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B4",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 1
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in row 1."
+      }
+    },
+    {
+      "cell_id": "C4",
+      "name": "Owen",
+      "profession": "Clerk",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B2",
+            "A3",
+            "D3"
+          ]
+        },
+        "count": 0,
+        "text": "No one in {B2, A3, D3} is a Criminal."
+      }
+    },
+    {
+      "cell_id": "D4",
+      "name": "Priya",
+      "profession": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D4",
+        "type": "FACT",
+        "target": "B3",
+        "target_status": "CRIMINAL",
+        "text": "B3 is a Criminal."
+      }
+    }
+  ]
+}

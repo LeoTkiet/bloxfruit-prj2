@@ -1,0 +1,291 @@
+{
+  "puzzle_id": "4x4_03",
+  "name": "4x4 Puzzle 3 - Silent Witnesses",
+  "difficulty": "hard",
+  "grid_size": 4,
+  "initial_revealed": [
+    "A1",
+    "C2",
+    "D4"
+  ],
+  "tags": [
+    "4x4",
+    "core"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Alice",
+      "profession": "Architect",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A1",
+            "C1"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A1, C1}."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bruno",
+      "profession": "Baker",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A2",
+            "C2",
+            "A3"
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in {A2, C2, A3}."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Celine",
+      "profession": "Chemist",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "ROW",
+          "row": 4
+        },
+        "count": 3,
+        "text": "At least 3 Criminals in row 4."
+      }
+    },
+    {
+      "cell_id": "D1",
+      "name": "Dante",
+      "profession": "Doctor",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "D1",
+            "A2",
+            "B2"
+          ]
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in {D1, A2, B2}."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Elena",
+      "profession": "Engineer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A1",
+            "A3",
+            "B3"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A1, A3, B3}."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Felix",
+      "profession": "Farmer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "FACT",
+        "target": "D1",
+        "target_status": "CRIMINAL",
+        "text": "D1 is a Criminal."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Grace",
+      "profession": "Guard",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in column C."
+      }
+    },
+    {
+      "cell_id": "D2",
+      "name": "Hugo",
+      "profession": "Historian",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D2",
+        "type": "SAME",
+        "targets": [
+          "A3",
+          "C3"
+        ],
+        "text": "A3 and C3 have the same status."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Iris",
+      "profession": "Inspector",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "B2",
+            "C2"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {B2, C2}."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Jude",
+      "profession": "Judge",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "A"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column A."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Kira",
+      "profession": "Librarian",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "DIFFERENT",
+        "targets": [
+          "C2",
+          "D3"
+        ],
+        "text": "C2 and D3 have different statuses."
+      }
+    },
+    {
+      "cell_id": "D3",
+      "name": "Liam",
+      "profession": "Locksmith",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D3",
+        "type": "AT_MOST",
+        "region": {
+          "type": "COL",
+          "col": "B"
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in column B."
+      }
+    },
+    {
+      "cell_id": "A4",
+      "name": "Mina",
+      "profession": "Mechanic",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "D1",
+            "A3",
+            "C4"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {D1, A3, C4}."
+      }
+    },
+    {
+      "cell_id": "B4",
+      "name": "Nolan",
+      "profession": "Navigator",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "B1"
+        },
+        "count": 3,
+        "text": "Exactly 3 Criminals in neighbors of B1."
+      }
+    },
+    {
+      "cell_id": "C4",
+      "name": "Olive",
+      "profession": "Optician",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C4",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "ROW",
+          "row": 3
+        },
+        "count": 1,
+        "text": "At least 1 Criminal in row 3."
+      }
+    },
+    {
+      "cell_id": "D4",
+      "name": "Paul",
+      "profession": "Pilot",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "D3"
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in neighbors of D3."
+      }
+    }
+  ]
+}

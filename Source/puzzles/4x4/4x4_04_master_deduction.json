@@ -1,0 +1,279 @@
+{
+  "puzzle_id": "4x4_04",
+  "name": "4x4 Puzzle 4 - Master Deduction",
+  "difficulty": "hard",
+  "grid_size": 4,
+  "initial_revealed": [
+    "B1",
+    "D2",
+    "A3"
+  ],
+  "tags": [
+    "4x4",
+    "core"
+  ],
+  "expected_status": "SOLVABLE",
+  "characters": [
+    {
+      "cell_id": "A1",
+      "name": "Alice",
+      "profession": "Architect",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A1",
+        "type": "DIFFERENT",
+        "targets": [
+          "A4",
+          "C4"
+        ],
+        "text": "A4 and C4 have different statuses."
+      }
+    },
+    {
+      "cell_id": "B1",
+      "name": "Bruno",
+      "profession": "Baker",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A3",
+            "B4"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A3, B4}."
+      }
+    },
+    {
+      "cell_id": "C1",
+      "name": "Celine",
+      "profession": "Chemist",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C1",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "A1",
+            "B3"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {A1, B3}."
+      }
+    },
+    {
+      "cell_id": "D1",
+      "name": "Dante",
+      "profession": "Doctor",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D1",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 4
+        },
+        "count": 1,
+        "text": "At most 1 Criminal in row 4."
+      }
+    },
+    {
+      "cell_id": "A2",
+      "name": "Elena",
+      "profession": "Engineer",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A2",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 1
+        },
+        "count": 2,
+        "text": "At most 2 Criminals in row 1."
+      }
+    },
+    {
+      "cell_id": "B2",
+      "name": "Felix",
+      "profession": "Farmer",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_B2",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "A3"
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in neighbors of A3."
+      }
+    },
+    {
+      "cell_id": "C2",
+      "name": "Grace",
+      "profession": "Guard",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_C2",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "B"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column B."
+      }
+    },
+    {
+      "cell_id": "D2",
+      "name": "Hugo",
+      "profession": "Historian",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D2",
+        "type": "DIFFERENT",
+        "targets": [
+          "C2",
+          "D2"
+        ],
+        "text": "C2 and D2 have different statuses."
+      }
+    },
+    {
+      "cell_id": "A3",
+      "name": "Iris",
+      "profession": "Inspector",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_A3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "NEIGHBORS",
+          "center": "A4"
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in neighbors of A4."
+      }
+    },
+    {
+      "cell_id": "B3",
+      "name": "Jude",
+      "profession": "Judge",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "ROW",
+          "row": 2
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in row 2."
+      }
+    },
+    {
+      "cell_id": "C3",
+      "name": "Kira",
+      "profession": "Librarian",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C3",
+        "type": "EXACTLY",
+        "region": {
+          "type": "EXPLICIT",
+          "cells": [
+            "D2",
+            "B3"
+          ]
+        },
+        "count": 1,
+        "text": "Exactly 1 Criminal in {D2, B3}."
+      }
+    },
+    {
+      "cell_id": "D3",
+      "name": "Liam",
+      "profession": "Locksmith",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_D3",
+        "type": "AT_LEAST",
+        "region": {
+          "type": "COL",
+          "col": "C"
+        },
+        "count": 2,
+        "text": "At least 2 Criminals in column C."
+      }
+    },
+    {
+      "cell_id": "A4",
+      "name": "Mina",
+      "profession": "Mechanic",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_A4",
+        "type": "EXACTLY",
+        "region": {
+          "type": "COL",
+          "col": "D"
+        },
+        "count": 2,
+        "text": "Exactly 2 Criminals in column D."
+      }
+    },
+    {
+      "cell_id": "B4",
+      "name": "Nolan",
+      "profession": "Navigator",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_B4",
+        "type": "SAME",
+        "targets": [
+          "C1",
+          "C2"
+        ],
+        "text": "C1 and C2 have the same status."
+      }
+    },
+    {
+      "cell_id": "C4",
+      "name": "Olive",
+      "profession": "Optician",
+      "status": "CRIMINAL",
+      "clue": {
+        "clue_id": "clue_C4",
+        "type": "AT_MOST",
+        "region": {
+          "type": "ROW",
+          "row": 3
+        },
+        "count": 3,
+        "text": "At most 3 Criminals in row 3."
+      }
+    },
+    {
+      "cell_id": "D4",
+      "name": "Paul",
+      "profession": "Pilot",
+      "status": "INNOCENT",
+      "clue": {
+        "clue_id": "clue_D4",
+        "type": "SAME",
+        "targets": [
+          "A3",
+          "C3"
+        ],
+        "text": "A3 and C3 have the same status."
+      }
+    }
+  ]
+}

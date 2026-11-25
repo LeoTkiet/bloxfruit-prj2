@@ -42,8 +42,13 @@ class DPLLSolver:
         """
         self.config: DPLLConfig = config or DPLLConfig()
 
-        # Cache preprocessed clauses by formula id for repeated queries on same CNF
-        self._cleaned_cache: dict[int, tuple[tuple[tuple[int, ...], ...], bool, int]] = {}
+        # Cache preprocessed clauses safely by value (with O(1) last-object fast path)
+        self._last_raw_clauses: Optional[Sequence[Sequence[int]]] = None
+        self._last_cleaned: Optional[tuple[tuple[tuple[int, ...], ...], bool, int]] = None
+        self._cleaned_cache: dict[
+            tuple[tuple[int, ...], ...],
+            tuple[tuple[tuple[int, ...], ...], bool, int],
+        ] = {}
 
         # Internal state reset per solve invocation
         self._clauses: tuple[tuple[int, ...], ...] = ()
@@ -106,9 +111,15 @@ class DPLLSolver:
                 )
             seen_assumptions.add(lit)
 
-        # Preprocess / retrieve cached cleaned clauses
-        cnf_key = id(cnf.clauses)
-        cached = self._cleaned_cache.get(cnf_key)
+        # Preprocess / retrieve cached cleaned clauses (immune to Python id() reuse)
+        cached: Optional[tuple[tuple[tuple[int, ...], ...], bool, int]] = None
+        if cnf.clauses is self._last_raw_clauses and self._last_cleaned is not None:
+            cached = self._last_cleaned
+        else:
+            try:
+                cached = self._cleaned_cache.get(cnf.clauses)
+            except TypeError:
+                cached = None
 
         if cached is not None:
             cleaned_clauses, has_initial_empty_clause, max_clause_var = cached
@@ -138,10 +149,18 @@ class DPLLSolver:
                 cleaned_list.append(unique_lits)
 
             cleaned_clauses = tuple(cleaned_list)
+            entry = (cleaned_clauses, has_initial_empty_clause, max_clause_var)
+
             # Store in cache (keep cache size bounded)
-            if len(self._cleaned_cache) > 256:
-                self._cleaned_cache.clear()
-            self._cleaned_cache[cnf_key] = (cleaned_clauses, has_initial_empty_clause, max_clause_var)
+            try:
+                if len(self._cleaned_cache) >= 64:
+                    self._cleaned_cache.clear()
+                self._cleaned_cache[cnf.clauses] = entry
+                self._last_raw_clauses = cnf.clauses
+                self._last_cleaned = entry
+            except TypeError:
+                # Unhashable clauses container: skip caching
+                pass
 
         # Determine variable domain
         max_var = max(cnf.num_vars, max_clause_var)

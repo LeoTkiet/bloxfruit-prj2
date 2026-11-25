@@ -84,7 +84,7 @@ def solve(self, cnf: CNFFormula, assumptions: Sequence[int] = ()) -> SATResult
 - **Kiểm tra chặt chẽ đầu vào:** Literal 0 không hợp lệ trong logic mệnh đề; solver chủ động kiểm tra và báo lỗi `ValueError` nếu gặp literal 0 trong mệnh đề hoặc assumptions.
 - **Không sao chép hay biến đổi công thức gốc:** Các literal trong `assumptions` được áp dụng trực tiếp vào mảng trạng thái `_assignment` tại mức quyết định 0.
 - **Phát hiện mâu thuẫn sớm:** Nếu danh sách assumptions chứa cặp literal đối ngẫu (ví dụ $[C_i, \neg C_i]$), solver trả về `UNSAT` với `backtracks = 1`. Xung đột giữa assumption với các mệnh đề có sẵn trong công thức sẽ được phát hiện ngay trong lượt lan truyền đơn vị đầu tiên với chi phí $\mathcal{O}(|F|)$.
-- **Bộ đệm tiền xử lý (Cleaned Clauses Cache):** Khi Logic Agent gọi liên tiếp hàng chục truy vấn `solve()` trên cùng một thực thể `CNFFormula`, bước loại bỏ trùng lặp và mệnh đề hằng đúng (tautology) được cache lại theo `id(cnf.clauses)`, tiết kiệm chi phí CPU đáng kể khi giải các bảng $4\times4$ và $5\times5$.
+- **Bộ đệm tiền xử lý (Cleaned Clauses Cache):** Khi Logic Agent gọi liên tiếp hàng chục truy vấn `solve()` trên cùng một thực thể `CNFFormula`, bước loại bỏ trùng lặp và mệnh đề hằng đúng (tautology) được cache lại an toàn theo giá trị `cnf.clauses` (kết hợp fast-path tham chiếu trực tiếp để tránh lỗi tái sử dụng `id()` khi thu gom rác), tiết kiệm chi phí CPU đáng kể khi giải các bảng $4\times4$ và $5\times5$.
 
 ---
 

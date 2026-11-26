@@ -1,8 +1,8 @@
 # THIẾT KẾ THỰC NGHIỆM & BẢN NHÁP MỤC "EXPERIMENTS" — PROJECT 2: GRIDUCTIVE SOLVER (PHẦN TV4)
 
 - **Dự án:** Project 2 — *Griductive Solver* (CSC14003 – Nhập môn Trí tuệ Nhân tạo, ĐH Khoa học Tự nhiên, ĐHQG-HCM)
-- **Người phụ trách:** Nguyên — Thành viên 4 (TV4: `agent/`, `experiments/`, `tests/test_agent/`, mục *Algorithms* & *Experiments* trong `Report.pdf`) `(plan.md 2.4, schedule.md)`
-- **Trạng thái hiện tại:** **Bản thiết kế & bản nháp trước GĐ 3B** — đã đồng bộ khung script `Source/experiments/` (`configs.py`, `encoder_factory.py`, `benchmark.py`, `plots.py`, `uniqueness_report.py`) theo `core/contracts/` và `docs/tv4_agent_conventions.md`; đang chờ `ICNFEncoder` thật của TV2 (Direct + Sinz) để chạy thực nghiệm chính thức. Mọi ô kết quả trong khung báo cáo đều giữ nguyên `[chờ kết quả benchmark GĐ 3B]`, tuyệt đối không điền số liệu tạm/giả.
+- **Người phụ trách:** Nguyên — Thành viên 4 (TV4: `agent/`, `experiments/`, `tests/test_agent/`, `tests/test_experiments/`, mục *Algorithms* & *Experiments* trong `Report.pdf`) `(plan.md 2.4, schedule.md)`
+- **Trạng thái hiện tại:** **Đã hoàn thành GĐ 2 (Mốc 1 + Uniqueness 15 puzzle) và GĐ 3B (Benchmark chính thức C0–C7 + 4 biểu đồ RQ1–RQ4)** trên nhánh `feat/tv4-benchmark-final` (nền `origin/dev` sau khi PR #3 `feat/tv2-logic` đã merge vào `dev` tại `9d2140b`). Toàn bộ bảng và nhận xét dưới đây sử dụng **100% số liệu thật** từ `CNFEncoder` (TV2, `direct` & `sinz`) + `DPLLSolver` (TV3) + `DeductiveLogicAgent` (TV4), không dùng bất kỳ số liệu stub nào.
 - **Tài liệu nguồn đối chiếu:** `description.md`, `plan.md`, `schedule.md`, `AI - Project 2.pdf`, `docs/tv4_agent_conventions.md` và bảng FAQ chính thức của giảng viên (`FAQ #1–#15` trong `description.md 4.1`).
 
 ---
@@ -49,14 +49,25 @@ Theo `plan.md 1.2, 2.1, 2.4`, ngoài 10 màn chuẩn, TV1 cung cấp `Source/puz
 
 ### 2.4. Bảng mô tả đặc trưng bộ dữ liệu (`Source/puzzles/`)
 
-| `puzzle_id` | Nhóm (`dataset_group`) | Kích thước ($N \times N$) | `primary_vars` ($N^2$) | Thẻ mở sẵn ở $KB_0$ `(FAQ #8)` | `max_region_size` ($\max \|R\|$) | `uniqueness_status` `(FAQ #9)` | Trạng thái kỳ vọng |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `3x3_01` .. `3x3_04` (4 màn) | `standard` | 3×3 | 9 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `UNIQUE` *(qua encoder thật TV2)* | `SOLVED` |
-| `4x4_01` .. `4x4_04` (4 màn) | `standard` | 4×4 | 16 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `UNIQUE` *(qua encoder thật TV2)* | `SOLVED` |
-| `5x5_01`, `5x5_02` (2 màn) | `standard` | 5×5 | 25 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `UNIQUE` *(qua encoder thật TV2)* | `SOLVED` |
-| `ext_3x3_01`, `ext_4x4_02`, `ext_4x4_03` (3 màn) | `extension` | 3×3 / 4×4 | 9 / 16 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `UNIQUE` *(qua encoder thật TV2)* | `SOLVED` |
-| `edge_3x3_ambiguous` | `edge_case` | 3×3 | 9 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `AMBIGUOUS` |
-| `edge_3x3_inconsistent` | `edge_case` | 3×3 | 9 | `[chờ tổng hợp GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `UNSAT` *(qua encoder thật TV2)* | `INCONSISTENT` |
+| `puzzle_id` | Nhóm (`dataset_group`) | Kích thước ($N \times N$) | `primary_vars` ($N^2$) | Thẻ mở sẵn ở $KB_0$ `(FAQ #8)` | `max_region_size` ($\max \|R\|$) | `uniqueness_status` `(FAQ #9)` | Khớp đáp án ẩn (`matches_hidden_solution`) | Trạng thái kết thúc (`terminal_status`) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `3x3_01` | `standard` | 3×3 | 9 | 2 | 8 | `UNIQUE` (0.499 ms) | `true` | `SOLVED` |
+| `3x3_02` | `standard` | 3×3 | 9 | 2 | 3 | `UNIQUE` (0.372 ms) | `true` | `SOLVED` |
+| `3x3_03` | `standard` | 3×3 | 9 | 2 | 5 | `UNIQUE` (0.277 ms) | `true` | `SOLVED` |
+| `3x3_04` | `standard` | 3×3 | 9 | 2 | 3 | `UNIQUE` (0.257 ms) | `true` | `SOLVED` |
+| `4x4_01` | `standard` | 4×4 | 16 | 3 | 5 | `UNIQUE` (0.588 ms) | `true` | `SOLVED` |
+| `4x4_02` | `standard` | 4×4 | 16 | 3 | 8 | `UNIQUE` (1.272 ms) | `true` | `SOLVED` |
+| `4x4_03` | `standard` | 4×4 | 16 | 3 | 5 | `UNIQUE` (0.895 ms) | `true` | `SOLVED` |
+| `4x4_04` | `standard` | 4×4 | 16 | 3 | 5 | `UNIQUE` (0.808 ms) | `true` | `SOLVED` |
+| `5x5_01` | `standard` | 5×5 | 25 | 5 | 8 | `UNIQUE` (1.653 ms) | `true` | `SOLVED` |
+| `5x5_02` | `standard` | 5×5 | 25 | 5 | 8 | `UNIQUE` (4.094 ms) | `true` | `SOLVED` |
+| `ext_3x3_01` | `extension` | 3×3 | 9 | 2 | 5 | `UNIQUE` (0.424 ms) | `true` | `SOLVED` |
+| `ext_4x4_02` | `extension` | 4×4 | 16 | 3 | 12 | `UNIQUE` (3.681 ms) | `true` | `SOLVED` |
+| `ext_4x4_03` | `extension` | 4×4 | 16 | 3 | 12 | `UNIQUE` (10.743 ms) | `true` | `SOLVED` |
+| `edge_3x3_ambiguous` | `edge_case` | 3×3 | 9 | 2 | 3 | `MULTIPLE` (0.312 ms) | `NA` | `AMBIGUOUS` |
+| `edge_3x3_inconsistent` | `edge_case` | 3×3 | 9 | 2 | 8 | `UNSAT` (0.491 ms) | `NA` | `INCONSISTENT` |
+
+> *Nguồn kiểm định:* `Source/experiments/results/uniqueness_report.csv` (chạy bằng `CNFEncoder("direct")` thật của TV2 và `DPLLSolver()` thật của TV3; `10/10` màn chuẩn và `3/3` màn mở rộng đạt `UNIQUE` với `matches_hidden_solution=true`).
 
 ---
 
@@ -92,7 +103,7 @@ Tổ hợp đầy đủ (full factorial) gồm $2 \times 2 \times 3 \times 2 = 2
 | **`C6`** | `opt_direct` | `direct` | `best_heur`* | `True` | `True` | Tổ hợp tối ưu đầy đủ trên **Direct** (tổng hợp tác động của DPLL tối ưu + Model Caching; so sánh với `C2`/`C3` để thấy lợi ích cộng thêm của Caching) (**RQ1, RQ2, RQ4**). |
 | **`C7`** | `opt_sinz` | `sinz` | `best_heur`* | `True` | `True` | Tổ hợp tối ưu đầy đủ trên **Sinz**; so sánh công bằng Direct vs. Sinz khi đã tối ưu hết (`C6` vs `C7`) và là phương án dự phòng cho stress case `5×5` `(plan.md 3.1)` (**RQ1, RQ2**). |
 
-> \* Ghi chú: `best_heur` mặc định là `jw` (có thể đổi bằng cờ `--best-heur moms|jw|lexicographic` trong `configs.py` / `benchmark.py`) và cố định cùng một giá trị cho cả `C6` và `C7` để phép so sánh Direct vs. Sinz công bằng. Khi chưa có bộ mã hóa Sinz thật trong `logic/`, `encoder_factory.py` tự ghi nhận các cấu hình `sinz` (`C5`, `C7`) với `terminal_status = SKIPPED_NO_ENCODER` và cấu hình `direct` rơi về `StubCNFEncoder` (`encoding = "stub"`, không đưa vào báo cáo chính thức).
+> \* Ghi chú: Tham số `best_heur` của `C6` và `C7` trong bản benchmark chính thức được chọn là **`moms`** (thay vì mặc định `jw`, bằng cờ `--best-heur moms`), và giữ cố định giống nhau cho cả `C6` lẫn `C7` để phép so sánh Direct vs. Sinz công bằng. Lý do chọn từ đối chiếu thực tế `C2` (`moms`) vs `C3` (`jw`) trên bộ chuẩn: cả hai đạt cùng tỷ lệ giải `10/10` và cùng tổng số nhánh cắt tỉa (`total_decisions = 285`, `total_backtracks = 530`, `total_propagations = 19,445`), nhưng `moms` nhanh hơn `jw` ở **cả 3 kích thước lưới** (lần chạy đối chiếu ban đầu: `3×3`: `9.752` vs `12.323 ms`; `4×4`: `45.625` vs `49.243 ms`; `5×5`: `109.516` vs `115.892 ms`; tổng chuẩn `164.893` vs `177.458 ms`), do `moms` chỉ đếm tần suất trên các mệnh đề ngắn nhất bằng số nguyên thay vì tính trọng số thực $2^{-|C|}$ trên toàn bộ mệnh đề chưa thỏa. Khi có `CNFEncoder` thật của TV2 (`direct` & `sinz`), không còn cấu hình nào bị `SKIPPED_NO_ENCODER` hay rơi về `StubCNFEncoder`.
 
 ---
 
@@ -252,136 +263,172 @@ Toàn bộ biểu đồ được sinh tự động bằng `Source/experiments/pl
 ### [BẮT ĐẦU BẢN NHÁP MỤC 5 — THỰC NGHIỆM VÀ ĐÁNH GIÁ]
 
 #### 5.1. Thiết lập thực nghiệm và Môi trường đo
-Để đánh giá toàn diện hiệu năng, khả năng mở rộng và tính tin cậy của hệ thống *Griductive Solver*, chúng tôi thực hiện chuỗi thực nghiệm trên bộ dữ liệu gồm **10 màn chơi chuẩn** (`4` màn `3×3`, `4` màn `4×4`, `2` màn `5×5`, vượt mức tối thiểu 6 màn của `FAQ #2`) cùng tùy chọn **3 màn mở rộng** (`extensions/`) và **2 màn kiểm thử biên** (`edge_3x3_ambiguous`, `edge_3x3_inconsistent`). Tất cả các cấu hình mã hóa CNF, bộ giải DPLL và tối ưu ở Logic Agent đều được chạy trên **cùng một tập puzzle** ở chế độ không giao diện (headless) để đảm bảo tính công bằng tuyệt đối `(AI - Project 2.pdf 4.5)`.
+Để đánh giá toàn diện hiệu năng, khả năng mở rộng và tính tin cậy của hệ thống *Griductive Solver*, chúng tôi thực hiện chuỗi thực nghiệm trên bộ dữ liệu gồm **10 màn chơi chuẩn** (`4` màn `3×3`, `4` màn `4×4`, `2` màn `5×5`, vượt mức tối thiểu 6 màn của `FAQ #2`), **3 màn mở rộng** (`extensions/`: `ext_3x3_01`, `ext_4x4_02`, `ext_4x4_03`) và **2 màn kiểm thử biên** (`edge_3x3_ambiguous`, `edge_3x3_inconsistent`) — tổng cộng **15 puzzle**, chạy toàn bộ **8 cấu hình (`C0`–`C7`)** (tổng `120` cặp `(puzzle, config)`, `360` lượt đo). Tất cả cấu hình mã hóa CNF (`direct`/`sinz`), bộ giải DPLL và tối ưu ở Logic Agent đều chạy trên **cùng một tập puzzle** ở chế độ không giao diện (headless) để đảm bảo tính công bằng tuyệt đối `(AI - Project 2.pdf 4.5)`.
 
-Mỗi cặp `(puzzle, cấu hình)` được chạy lặp `[chờ xác nhận: 5 hoặc 3]` lần sau `1` lượt warm-up, với giới hạn thời gian `timeout = 60 giây` cho mỗi lượt chạy `(plan.md 3.1)`. Giá trị thời gian thực thi được báo cáo bằng **trung vị (median)** tính bằng mili-giây (`ms`), kèm kiểm tra tự động tính tất định (`deterministic_check`) và đối chiếu chéo chuỗi phán quyết giữa các cấu hình (`cross_config_consistency`). Theo xác nhận chính thức từ giảng viên `(FAQ #12)`, chúng tôi báo cáo số bước suy diễn (`deduction_steps`) làm đại diện cho độ sâu suy luận và bỏ qua chỉ số `reveal_waves`.
+Mỗi cặp `(puzzle, cấu hình)` được chạy lặp **`repeats = 3`** lần trong tiến trình `multiprocessing` (`spawn`) độc lập trên Windows với giới hạn thời gian **`timeout = 60 giây`** (`60,000 ms`) cho mỗi lượt chạy `(plan.md 3.1)`. Giá trị thời gian thực thi được báo cáo bằng **trung vị (`median`)** tính bằng mili-giây (`ms`), kèm kiểm tra tự động tính tất định (`deterministic_check`) và đối chiếu chéo chuỗi phán quyết giữa các cấu hình (`cross_config_consistency`). Theo xác nhận chính thức từ giảng viên `(FAQ #12)`, chúng tôi báo cáo số bước suy diễn (`deduction_steps`) làm đại diện cho độ sâu suy luận và bỏ qua chỉ số `reveal_waves` (để trống trong CSV). Tổng thời gian chạy trọn bộ 360 lượt benchmark chính thức là `87.53 giây`.
 
 **Bảng 5.1: Thông số môi trường phần cứng và phần mềm thực nghiệm**
 
 | Thành phần môi trường | Chi tiết |
 | :--- | :--- |
-| CPU | `[chờ kết quả benchmark GĐ 3B]` |
-| Bộ nhớ RAM | `[chờ kết quả benchmark GĐ 3B]` |
-| Hệ điều hành | `[chờ kết quả benchmark GĐ 3B]` |
-| Phiên bản Python | `[chờ kết quả benchmark GĐ 3B]` |
-| Thời điểm thực thi & Commit | `[chờ kết quả benchmark GĐ 3B]` |
+| CPU | `11th Gen Intel(R) Core(TM) i5-1135G7 @ 2.40GHz` (8 luồng logic, `Intel64 Family 6 Model 140 Stepping 1`) |
+| Bộ nhớ RAM | `15.75 GB` |
+| Hệ điều hành | `Windows-11-10.0.26300-SP0` |
+| Phiên bản Python | `3.12.10` (`MSC v.1943 64 bit (AMD64)`) |
+| Thời điểm thực thi & Commit | `2026-11-26T16:00:38+07:00` — Commit gốc tích hợp: `df66ddb` (`origin/dev` + `origin/feat/tv2-logic`, khớp byte-to-byte với `origin/dev` sau PR #3 `9d2140b`) |
 
-#### 5.2. Kết quả tổng hợp trên bộ 10 màn chơi chuẩn
-Bảng 5.2 tổng hợp đầy đủ các nhóm chỉ số bắt buộc (`AI - Project 2.pdf 4.5, description.md 2.7`) của hệ thống ở cấu hình tối ưu tiêu chuẩn `[chờ chốt tên cấu hình tốt nhất giữa C6/C7 ở GĐ 3B]` trên toàn bộ 10 màn chơi chuẩn.
+#### 5.2. Kết quả tổng hợp trên bộ 10 màn chơi chuẩn (và 3 màn mở rộng)
+Bảng 5.2 tổng hợp đầy đủ các nhóm chỉ số bắt buộc (`AI - Project 2.pdf 4.5, description.md 2.7`) của hệ thống ở cấu hình tối ưu nhanh nhất **`C6` (`opt_direct`: `direct` + `moms` + `pure_literal=True` + `model_caching=True`)** trên toàn bộ 10 màn chơi chuẩn và 3 màn mở rộng (`extensions/`).
 
-**Bảng 5.2: Kết quả thực nghiệm tổng hợp trên 10 màn chơi chuẩn (cấu hình `[chờ kết quả benchmark GĐ 3B]`)**
+**Bảng 5.2: Kết quả thực nghiệm tổng hợp trên 10 màn chuẩn và 3 màn mở rộng (cấu hình `C6` — `opt_direct`)**
 
-| Màn chơi | Kích thước | `terminal_status` | `primary_vars` | `aux_vars_final` ($KB_T$) | `cnf_clauses_final` ($KB_T$) | `sat_calls_total` | `total_decisions` | `total_propagations` | `total_backtracks` | `deduction_steps`* | `solver_runtime_ms` (`median`) | `total_runtime_ms` (`median`) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `3x3_01` | 3×3 | `[chờ kết quả benchmark GĐ 3B]` | 9 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `3x3_02` | 3×3 | `[chờ kết quả benchmark GĐ 3B]` | 9 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `3x3_03` | 3×3 | `[chờ kết quả benchmark GĐ 3B]` | 9 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `3x3_04` | 3×3 | `[chờ kết quả benchmark GĐ 3B]` | 9 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `4x4_01` | 4×4 | `[chờ kết quả benchmark GĐ 3B]` | 16 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `4x4_02` | 4×4 | `[chờ kết quả benchmark GĐ 3B]` | 16 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `4x4_03` | 4×4 | `[chờ kết quả benchmark GĐ 3B]` | 16 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `4x4_04` | 4×4 | `[chờ kết quả benchmark GĐ 3B]` | 16 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_01` | 5×5 | `[chờ kết quả benchmark GĐ 3B]` | 25 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_02` | 5×5 | `[chờ kết quả benchmark GĐ 3B]` | 25 | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
+| Màn chơi (`dataset_group`) | Kích thước | `terminal_status` | `primary_vars` | `aux_vars_final` ($KB_T$) | `cnf_clauses_final` ($KB_T$) | `sat_calls_total` | `sat_calls_cached_skipped` | `total_decisions` | `total_propagations` | `total_backtracks` | `deduction_steps`* | `solver_runtime_ms` (`median`) | `total_runtime_ms` (`median`) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `3x3_01` (`standard`) | 3×3 | `SOLVED` | 9 | 0 | 28 | 35 | 19 | 0 | 168 | 16 | 7 | 0.487 | 2.227 |
+| `3x3_02` (`standard`) | 3×3 | `SOLVED` | 9 | 0 | 30 | 35 | 18 | 0 | 212 | 22 | 7 | 0.579 | 2.402 |
+| `3x3_03` (`standard`) | 3×3 | `SOLVED` | 9 | 0 | 32 | 35 | 19 | 0 | 186 | 18 | 7 | 0.643 | 2.867 |
+| `3x3_04` (`standard`) | 3×3 | `SOLVED` | 9 | 0 | 26 | 35 | 21 | 0 | 180 | 12 | 7 | 0.529 | 2.136 |
+| `4x4_01` (`standard`) | 4×4 | `SOLVED` | 16 | 0 | 69 | 104 | 61 | 0 | 1041 | 74 | 13 | 2.471 | 7.428 |
+| `4x4_02` (`standard`) | 4×4 | `SOLVED` | 16 | 0 | 164 | 104 | 52 | 0 | 963 | 61 | 13 | 3.239 | 8.792 |
+| `4x4_03` (`standard`) | 4×4 | `SOLVED` | 16 | 0 | 88 | 104 | 66 | 0 | 983 | 52 | 13 | 3.944 | 10.271 |
+| `4x4_04` (`standard`) | 4×4 | `SOLVED` | 16 | 0 | 77 | 100 | 87 | 20 | 920 | 30 | 13 | 3.875 | 9.368 |
+| `5x5_01` (`standard`) | 5×5 | `SOLVED` | 25 | 0 | 262 | 230 | 121 | 0 | 3018 | 158 | 20 | 11.316 | 24.479 |
+| `5x5_02` (`standard`) | 5×5 | `SOLVED` | 25 | 0 | 354 | 215 | 182 | 102 | 3129 | 85 | 20 | 30.388 | 46.315 |
+| `ext_3x3_01` (`extension`) | 3×3 | `SOLVED` | 9 | 4 | 39 | 33 | 22 | 2 | 209 | 15 | 7 | 0.752 | 2.893 |
+| `ext_4x4_02` (`extension`) | 4×4 | `SOLVED` | 16 | 23 | 137 | 97 | 79 | 46 | 1204 | 26 | 13 | 5.219 | 11.275 |
+| `ext_4x4_03` (`extension`) | 4×4 | `SOLVED` | 16 | 182 | 504 | 99 | 71 | 30 | 5846 | 41 | 13 | 48.718 | 58.702 |
 
-*\*Ghi chú: Chỉ số `reveal_waves` được bỏ qua theo hướng dẫn tại FAQ #12.*
+*\*Ghi chú: Chỉ số `reveal_waves` được bỏ qua theo hướng dẫn tại FAQ #12. Giá trị `aux_vars_final > 0` ở các màn `extension` (dù dùng `direct`) là do biến phụ Tseitin từ `PARITY` và bộ đếm đơn phân của `COMPARE_COUNTS`.*
 
-**Khung nhận xét (RQ1 – Khả năng mở rộng):**
-- Khi chuyển từ lưới `3×3` sang `4×4` và `5×5`, số lượng mệnh đề CNF tại $KB_T$ tăng từ `[chờ kết quả benchmark GĐ 3B]` lên `[chờ kết quả benchmark GĐ 3B]`, kéo theo tổng thời gian thực thi thay đổi từ `[chờ kết quả benchmark GĐ 3B]` ms lên `[chờ kết quả benchmark GĐ 3B]` ms.
-- Tỷ lệ giữa thời gian trong lõi DPLL (`solver_runtime_ms`) và tổng thời gian giải (`total_runtime_ms`) đạt `[chờ kết quả benchmark GĐ 3B]`%, cho thấy nút thắt hiệu năng chính nằm ở `[chờ phân tích GĐ 3B: bộ giải DPLL / khâu tái mã hóa CNF]`.
-- Tất cả các lần chạy lặp lại đều đạt `deterministic_check = PASS` và mọi cấu hình không timeout/skip đều đạt `cross_config_consistency = PASS` *(kỳ vọng — xác nhận bằng GĐ 3B)*, khẳng định hệ thống hoàn toàn tất định và các tối ưu không làm sai lệch chuỗi phán quyết.
+![Hình E1: Khả năng mở rộng theo kích thước lưới](../Source/experiments/results/charts/rq1_scalability.png)
+*Hình E1 (`rq1_scalability.png`): Trung bình thời gian giải (trái) và số lần gọi SAT thực tế (phải) theo kích thước lưới `3×3` → `5×5` trên bộ 10 màn chuẩn.*
+
+**Nhận xét định lượng (RQ1 – Khả năng mở rộng):**
+- **Tăng trưởng quy mô công thức CNF và truy vấn SAT:** Khi lưới tăng từ `3×3` (`primary_vars = 9`, $k_0 = 2$, $T = 7$ bước) lên `4×4` (`primary_vars = 16`, $k_0 = 3$, $T = 13$ bước) và `5×5` (`primary_vars = 25`, $k_0 = 5$, $T = 20$ bước), ở cấu hình `C6` số mệnh đề trung bình tại $KB_T$ tăng từ **`29.0`** (`26–32`) lên **`99.5`** (`69–164`) và **`308.0`** (`262–354`). Tổng số lần gọi SAT thực tế (`sat_calls_total`) tăng từ trung bình **`35.00`** (`3×3`) lên **`103.00`** (`4×4`, gấp `2.94×`) và **`222.50`** (`5×5`, gấp `6.36×` so với `3×3`), khớp chặt đường cong lý thuyết $O(T^2)$ của vòng lặp Entailment.
+- **Thời gian thực thi và tỷ lệ đóng góp của DPLL (`solver_runtime_ms` / `total_runtime_ms`):** Ở cấu hình `C6`, trung bình `total_runtime_ms_median` tăng từ **`2.408 ms`** (`3×3`) lên **`8.965 ms`** (`4×4`) và **`35.397 ms`** (`5×5`; chậm nhất là `5x5_02` đạt **`46.315 ms`**). Trong đó tỷ trọng thời gian nằm trong lõi DPLL tăng mạnh theo kích thước lưới: **`23.24%`** (`2.238 / 9.632 ms`) ở `3×3`, **`37.73%`** (`13.529 / 35.859 ms`) ở `4×4`, và **`58.91%`** (`41.704 / 70.794 ms`) ở `5×5` (tổng toàn bộ 10 màn chuẩn là **`49.42%`**, tức `57.471 / 116.285 ms`). Trên lưới nhỏ `3×3`, chi phí cố định ở tầng Python (`encode_kb`, giao tiếp `GameEngine`) chiếm tới `~77%`; khi lên `5×5` (hoặc `ext_4x4_03` có `504` mệnh đề, `182` biến phụ với `48.718 / 58.702 ms = 82.99%`), lõi tìm kiếm DPLL trở thành nút thắt chính.
+- **Giải trọn vẹn `5×5` trong ngưỡng timeout:** Tất cả **8/8 cấu hình** (`C0`–`C7`) đều giải trọn vẹn `10/10` màn chuẩn và `3/3` màn mở rộng (`solved_rate = 100%`, **`0` ca `TIMEOUT`** trong ngưỡng `60,000 ms`). Ngay cả cấu hình `C5` chậm nhất trên `5x5_02` cũng chỉ tốn `199.405 ms` (< `0.2s`, thấp hơn `300×` so với giới hạn 60s).
+- **Tính tất định và nhất quán chéo:** `120/120` dòng trong `benchmark_summary.csv` đều đạt **`deterministic_check = PASS`** và **`cross_config_consistency = PASS`**, xác nhận mọi tối ưu không làm sai lệch bất kỳ bước phán quyết nào.
 
 #### 5.3. So sánh chiến lược mã hóa CNF: Direct Combinatorial vs. Sequential Counter (Sinz)
-Để trả lời **RQ2**, chúng tôi đối chiếu hai chiến lược mã hóa ràng buộc đếm (`AT_LEAST`, `AT_MOST`, `EXACTLY`) theo kích thước vùng thực tế $\|R\|$ (`max_region_size`) trên cùng 10 màn chơi chuẩn (và tùy chọn 3 màn `extensions/`) ở cả hai chế độ: DPLL cơ bản (`C0` vs. `C5`) và cấu hình tối ưu (`C6` vs. `C7`). Nhắc lại rằng Sinz mã hóa trực tiếp `AT_MOST(k, R)` với $O(\|R\|\cdot k)$ biến phụ và mệnh đề, còn `AT_LEAST(k, R)` được quy về `AT_MOST(\|R\|−k)` trên các literal phủ định nên tốn $O(\|R\|\cdot(\|R\|-k))$.
+Để trả lời **RQ2**, Bảng 5.3 đối chiếu hai chiến lược mã hóa ràng buộc đếm (`AT_LEAST`, `AT_MOST`, `EXACTLY`) theo kích thước vùng thực tế $\|R\|$ (`max_region_size`) trên toàn bộ 10 màn chuẩn và 3 màn mở rộng ở cả chế độ DPLL cơ bản (`C0` vs. `C5`) lẫn cấu hình tối ưu (`C6` vs. `C7`).
 
-**Bảng 5.3: So sánh Direct Combinatorial và Sequential Counter (Sinz) theo kích thước vùng $\|R\|$ trên 10 màn chơi chuẩn**
+**Bảng 5.3: So sánh Direct Combinatorial và Sequential Counter (Sinz) theo kích thước vùng $\|R\|$ trên 10 màn chuẩn và 3 màn mở rộng**
 
-| Màn chơi | `max_region_size` ($\max \|R\|$) | Cấu hình so sánh | `aux_vars_final` (Direct / Sinz) | `cnf_clauses_final` (Direct / Sinz) | `total_propagations` (Direct / Sinz) | `total_decisions` (Direct / Sinz) | `total_runtime_ms` median (Direct / Sinz) | Ghi chú / Trạng thái |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| `3x3_01` .. `3x3_04` | `[chờ GĐ 3B]` | `C0` vs `C5` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `4x4_01` .. `4x4_04` | `[chờ GĐ 3B]` | `C0` vs `C5` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_01` | `[chờ GĐ 3B]` | `C0` vs `C5` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_02` | `[chờ GĐ 3B]` | `C0` vs `C5` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_01` | `[chờ GĐ 3B]` | `C6` vs `C7` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `5x5_02` | `[chờ GĐ 3B]` | `C6` vs `C7` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
+| Màn chơi (`dataset_group`) | `max_region_size` ($\max \|R\|$) | Cấu hình so sánh | `aux_vars_final` (Direct / Sinz) | `cnf_clauses_final` (Direct / Sinz) | `total_propagations` (Direct / Sinz) | `total_decisions` (Direct / Sinz) | `total_runtime_ms` median (Direct / Sinz) | Trạng thái |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `3x3_01` (`standard`) | 8 | `C0` vs `C5` | 0 / 12 | 28 / 43 | 285 / 658 | 2 / 7 | 2.381 / 5.197 | `SOLVED` / `SOLVED` |
+| `3x3_02` (`standard`) | 3 | `C0` vs `C5` | 0 / 22 | 30 / 61 | 338 / 864 | 0 / 0 | 2.450 / 3.975 | `SOLVED` / `SOLVED` |
+| `3x3_03` (`standard`) | 5 | `C0` vs `C5` | 0 / 20 | 32 / 58 | 297 / 791 | 0 / 0 | 3.055 / 3.867 | `SOLVED` / `SOLVED` |
+| `3x3_04` (`standard`) | 3 | `C0` vs `C5` | 0 / 16 | 26 / 48 | 292 / 745 | 1 / 7 | 2.417 / 3.419 | `SOLVED` / `SOLVED` |
+| `4x4_01` (`standard`) | 5 | `C0` vs `C5` | 0 / 40 | 69 / 124 | 1807 / 4909 | 0 / 0 | 9.255 / 16.505 | `SOLVED` / `SOLVED` |
+| `4x4_02` (`standard`) | 8 | `C0` vs `C5` | 0 / 98 | 164 / 238 | 1568 / 4718 | 0 / 10 | 11.268 / 16.880 | `SOLVED` / `SOLVED` |
+| `4x4_03` (`standard`) | 5 | `C0` vs `C5` | 0 / 89 | 88 / 213 | 1682 / 7067 | 0 / 0 | 13.168 / 25.623 | `SOLVED` / `SOLVED` |
+| `4x4_04` (`standard`) | 5 | `C0` vs `C5` | 0 / 86 | 77 / 206 | 1811 / 8989 | 102 / 104 | 13.606 / 33.945 | `SOLVED` / `SOLVED` |
+| `5x5_01` (`standard`) | 8 | `C0` vs `C5` | 0 / 223 | 262 / 517 | 5465 / 23185 | 118 / 147 | 35.537 / 84.843 | `SOLVED` / `SOLVED` |
+| `5x5_02` (`standard`) | 8 | `C0` vs `C5` | 0 / 244 | 354 / 558 | 6094 / 36040 | 470 / 470 | 70.501 / 199.405 | `SOLVED` / `SOLVED` |
+| `5x5_01` (`standard`) | 8 | `C6` vs `C7` | 0 / 223 | 262 / 517 | 3018 / 12334 | 0 / 27 | 24.479 / 52.556 | `SOLVED` / `SOLVED` |
+| `5x5_02` (`standard`) | 8 | `C6` vs `C7` | 0 / 244 | 354 / 558 | 3129 / 16404 | 102 / 95 | 46.315 / 91.803 | `SOLVED` / `SOLVED` |
+| `ext_3x3_01` (`extension`) | 5 | `C6` vs `C7` | 4 / 8 | 39 / 43 | 209 / 241 | 2 / 2 | 2.893 / 2.968 | `SOLVED` / `SOLVED` |
+| `ext_4x4_02` (`extension`) | 12 | `C6` vs `C7` | 23 / 33 | 137 / 150 | 1204 / 1529 | 46 / 46 | 11.275 / 12.267 | `SOLVED` / `SOLVED` |
+| `ext_4x4_03` (`extension`) | 12 | `C6` vs `C7` | 182 / 186 | 504 / 508 | 5846 / 6210 | 30 / 30 | 58.702 / 61.552 | `SOLVED` / `SOLVED` |
 
-*(Chèn **Hình E1** — 2 biểu đồ con so sánh biến và mệnh đề CNF Direct vs. Sinz tại đây: `[chờ biểu đồ GĐ 3B]`.)*
+![Hình E2: So sánh Direct vs. Sinz trên 10 màn chuẩn](../Source/experiments/results/charts/rq2_direct_vs_sinz.png)
+*Hình E2 (`rq2_direct_vs_sinz.png`): So sánh `aux_vars_final` (trái) và `cnf_clauses_final` (phải) giữa Direct (`C0`) và Sinz (`C5`) trên 10 màn chuẩn.*
 
-**Khung nhận xét (RQ2 – Direct vs. Sinz theo kích thước vùng $\|R\|$ thực):**
-- *Ghi chú cách tính:* `max_region_size` lấy $\max |R|$ trên mọi clue có vùng của màn chơi. Trên 10 màn chuẩn, giá trị này trùng với $\max |R|$ của các clue đếm (`AT_LEAST`/`AT_MOST`/`EXACTLY`); ở `extensions/` nó có thể đến từ `PARITY` hoặc `COMPARE_COUNTS`, nên khi đối chiếu Direct vs. Sinz trên `extensions/` cần xem vùng lớn nhất thuộc loại clue nào.
-- Theo `description.md 2.3`, ở mọi kích thước lưới (`3×3`, `4×4`, `5×5`), các vùng cơ bản đều có kích thước nhỏ (`ROW`/`COL` $\le N \le 5$, `NEIGHBORS` $\le 8$). Vì vậy sự khác biệt giữa Direct và Sinz phụ thuộc chủ yếu vào **kích thước vùng $\|R\|$ thực tế của từng clue** (`max_region_size`) và giá trị $k$, chứ không đơn thuần theo kích thước lưới $N$.
-- Trên các clue có vùng nhỏ ($\|R\| \le 5$, như `ROW`/`COL`), Direct không phát sinh biến phụ đếm và số mệnh đề tổ hợp nhỏ (`[chờ kết quả benchmark GĐ 3B]`), trong khi Sinz thêm biến phụ ở cả hai chiều `AT_MOST(k)` và `AT_LEAST(k)` (`AT_MOST(\|R\|−k)` trên literal phủ định).
-- Trên vùng `NEIGHBORS` ở ô trong ($\|R\| = 8$), với `EXACTLY(k, R)`, Direct sinh $\binom{8}{k+1} + \binom{8}{9-k}$ mệnh đề và **đạt đỉnh tại $k = 4$ với $56 + 56 = 112$ mệnh đề**. Khi màn chơi chứa các vùng lớn hơn (`EXPLICIT` nhiều ô hoặc `BOUNDARY` với 8/12/16 ô nếu cài đặt), số mệnh đề Direct tăng theo tổ hợp $\binom{\|R\|}{k+1} + \binom{\|R\|}{\|R\|-k+1}$, trong khi Sinz giữ mức $O(\|R\|\cdot k)$ cho `AT_MOST(k)` và $O(\|R\|\cdot(\|R\|-k))$ cho `AT_LEAST(k)`.
-- Đối chiếu số liệu thực tế ở GĐ 3B (`[chờ kết quả benchmark GĐ 3B]`): xác định ngưỡng $\|R\|$ giao cắt (crossover point) nơi Sinz bắt đầu ít mệnh đề hơn hoặc nhanh hơn Direct, kèm ảnh hưởng của biến phụ Sinz lên `total_propagations` và `total_decisions`.
+**Nhận xét định lượng (RQ2 – Direct vs. Sinz theo kích thước vùng $\|R\|$ thực):**
+- *Cách diễn giải `max_region_size` ở `extensions/`:* Trên 10 màn chuẩn, `max_region_size` ($\le 8$) thuộc các clue đếm cơ bản (`ROW`/`COL`/`NEIGHBORS`). Ở `extensions/`, `max_region_size = 12` ở `ext_4x4_02` nằm tại clue `PARITY` (mã hóa bằng chuỗi XOR Tseitin giống nhau ở cả `direct` và `sinz`), còn `ext_4x4_03` có clue `EXACTLY` trên vùng `BOUNDARY`/`EXPLICIT` kích thước $\|R\| = 12$.
+- **Trên toàn bộ 10 màn chuẩn ($\max \|R\| \in \{3, 5, 8\}$), Direct vượt trội rõ rệt Sinz về cả kích thước công thức lẫn tốc độ:**
+  - *Biến phụ & mệnh đề:* Direct sinh `0` biến phụ và tổng `1,130` mệnh đề tại $KB_T$ qua 10 màn (`26–354` mệnh đề/màn), trong khi Sinz phát sinh **`850`** biến phụ (`12–244` biến phụ/màn) và **`2,066`** mệnh đề (`43–558`, nhiều hơn `1.83×`).
+  - *Lan truyền đơn vị & thời gian giải:* Các biến phụ của Sinz làm tổng số `total_propagations` tăng vọt **`4.48×`** ở DPLL cơ bản (`19,639` ở `C0` lên `87,966` ở `C5`) và **`4.10×`** ở cấu hình tối ưu (`10,800` ở `C6` lên `44,260` ở `C7`). Hệ quả là tổng `total_runtime_ms_median` của `C5` (`393.659 ms`) chậm hơn `C0` (`163.638 ms`) **`2.41×`**, còn `C7` (`226.451 ms`) chậm hơn `C6` (`116.285 ms`) **`1.95×`**.
+- **Quan sát vùng giao cắt khi $\|R\|$ tăng lên `12` (`ext_4x4_03`):** Ở `ext_4x4_03` (có `EXACTLY` với $\|R\| = 12$), khoảng cách số mệnh đề gần như triệt tiêu (`504` ở Direct vs. `508` ở Sinz, biến phụ `182` vs. `186`) và thời gian `C6` vs `C7` chỉ còn chênh lệch nhẹ (`58.702` vs. `61.552 ms`). Điều này xác nhận đúng phân tích lý thuyết: trong phạm vi bàn chơi tiêu chuẩn Griductive ($\|R\| \le 8$), **Direct** gọn và nhanh hơn; **Sinz** chỉ bắt đầu phát huy ưu thế tiệm cận $O(\|R\|\cdot k)$ khi mở rộng sang vùng đếm lớn ($\|R\| > 12$).
 
 #### 5.4. Đánh giá tối ưu DPLL (Pure-Literal, MOMs/JW) và Model Caching
-Để trả lời **RQ3** và **RQ4**, Bảng 5.4 tổng hợp kết quả nghiên cứu cắt bỏ (ablation study) từ mốc chuẩn `C0` sang các cấu hình lần lượt bổ sung Pure-Literal (`C1`), heuristic `MOMs` (`C2`), heuristic `JW` (`C3`), Model Caching (`C4`), và tổ hợp tối ưu (`C6`, `C7`). Nhằm đảm bảo so sánh công bằng, các cột tổng chỉ số (`sat_calls_total`, `total_decisions`, `total_backtracks`, `total_runtime_ms_median`) được tính **trên cùng tập giao $S_{\text{common}}$ gồm các màn mà mọi cấu hình đều `SOLVED`**, đồng thời báo riêng `solved_rate` và số ca `TIMEOUT`.
+Để trả lời **RQ3** và **RQ4**, Bảng 5.4 tổng hợp kết quả ablation từ `C0` sang `C1`–`C7`. Vì toàn bộ `10/10` màn chuẩn đều `SOLVED` ở cả 8 cấu hình, tập giao $S_{\text{common}}$ bao gồm đủ **10/10 màn chuẩn** (`|S_common| = 10`, `TIMEOUT = 0`).
 
-**Bảng 5.4: So sánh hiệu năng các cấu hình DPLL và Model Caching trên tập giao $S_{\text{common}}$ và số ca `TIMEOUT`**
+**Bảng 5.4: So sánh hiệu năng các cấu hình DPLL và Model Caching trên tập giao $S_{\text{common}}$ (`10/10` màn chuẩn)**
 
 | Cấu hình | Encoding | Heuristic | Pure-Literal | Model Caching | `solved_rate` *(dẫn xuất)* | Số ca `TIMEOUT` | Tổng `sat_calls_total` (trên $S_{\text{common}}$) | Tổng `total_decisions` (trên $S_{\text{common}}$) | Tổng `total_backtracks` (trên $S_{\text{common}}$) | Tổng `total_runtime_ms_median` (trên $S_{\text{common}}$) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| `C0` (Baseline) | `direct` | `lexicographic` | Tắt | Tắt | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C1` (+PL) | `direct` | `lexicographic` | Bật | Tắt | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C2` (+PL+MOMs) | `direct` | `moms` | Bật | Tắt | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C3` (+PL+JW) | `direct` | `jw` | Bật | Tắt | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C4` (+Caching) | `direct` | `lexicographic` | Tắt | Bật | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C5` (Sinz Base) | `sinz` | `lexicographic` | Tắt | Tắt | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C6` (Opt Direct) | `direct` | `best_heur` | Bật | Bật | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
-| `C7` (Opt Sinz) | `sinz` | `best_heur` | Bật | Bật | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` | `[chờ kết quả benchmark GĐ 3B]` |
+| `C0` (Baseline) | `direct` | `lexicographic` | Tắt | Tắt | `100%` (10/10) | 0 | 1643 | 693 | 530 | 163.638 |
+| `C1` (+PL) | `direct` | `lexicographic` | Bật | Tắt | `100%` (10/10) | 0 | 1643 | 516 | 530 | 197.395 |
+| `C2` (+PL+MOMs) | `direct` | `moms` | Bật | Tắt | `100%` (10/10) | 0 | 1643 | 285 | 530 | 166.261 |
+| `C3` (+PL+JW) | `direct` | `jw` | Bật | Tắt | `100%` (10/10) | 0 | 1643 | 285 | 530 | 168.359 |
+| `C4` (+Caching) | `direct` | `lexicographic` | Tắt | Bật | `100%` (10/10) | 0 | 987 | 282 | 527 | 124.663 |
+| `C5` (Sinz Base) | `sinz` | `lexicographic` | Tắt | Tắt | `100%` (10/10) | 0 | 1643 | 745 | 530 | 393.659 |
+| `C6` (Opt Direct) | `direct` | `moms` | Bật | Bật | `100%` (10/10) | 0 | 997 | 122 | 528 | 116.285 |
+| `C7` (Opt Sinz) | `sinz` | `moms` | Bật | Bật | `100%` (10/10) | 0 | 997 | 157 | 527 | 226.451 |
 
-*\*Ghi chú Bảng 5.4: $S_{\text{common}}$ là tập các màn chuẩn mà toàn bộ cấu hình đang khảo sát đều đạt `SOLVED` (kích thước $|S_{\text{common}}|$ = `[chờ kết quả benchmark GĐ 3B]` / 10). Nếu có cấu hình bị `TIMEOUT`, số ca `TIMEOUT` được ghi tách riêng ở cột `Số ca TIMEOUT` và chi tiết các màn ngoài $S_{\text{common}}$ được trình bày ở Bảng 5.2, 5.3 và 5.5.*
+*\*Ghi chú Bảng 5.4: Trên 3 màn `extensions/`, kết quả cũng đạt `3/3 SOLVED` (`0 TIMEOUT`) ở cả 8 cấu hình: tổng `sat_calls_total` giảm từ `401` (`C0`–`C3`, `C5`) xuống `229` (`C4`, `C6`, `C7`, bỏ qua `172` truy vấn = `-42.89%`); tổng `total_decisions` giảm từ `272` (`C0`) xuống `162` (`C2`), `147` (`C3`) và `78` (`C6`/`C7`); tổng `total_runtime_ms_median` giảm từ `137.658 ms` (`C0`) xuống `72.870 ms` (`C6`, `-47.06%`).*
 
-*(Chèn **Hình E2**, **Hình E3**, **Hình E4** tại đây: `[chờ biểu đồ GĐ 3B]`.)*
+![Hình E3: Tác động của Pure-Literal & Heuristic lên tìm kiếm DPLL](../Source/experiments/results/charts/rq3_heuristics.png)
+*Hình E3 (`rq3_heuristics.png`): Tổng `total_decisions` (trái) và `total_backtracks` (phải) giữa `C0`, `C1`, `C2`, `C3` trên 10 màn chuẩn.*
 
-**Khung nhận xét (RQ3 & RQ4):**
-- **Tác động của Pure-Literal (`C1` vs. `C0`):** `[chờ kết quả benchmark GĐ 3B — nhận xét mức giảm total_decisions/total_backtracks và chi phí quét literal thuần ở mỗi nút đệ quy]`.
-- **Tác động của Heuristic chọn biến (`C2`, `C3` vs. `C1`):** `[chờ kết quả benchmark GĐ 3B — so sánh MOMs với JW; làm rõ sự đánh đổi giữa thời gian tính trọng số heuristic trên lưới nhỏ 3×3 và lợi ích cắt tỉa cây tìm kiếm trên lưới 5×5]`.
-- **Tác động của Model Caching (`C4` vs. `C0` và `C6` vs. `C2`/`C3`):** Model Caching bỏ qua được `[chờ kết quả benchmark GĐ 3B]` truy vấn SAT dư thừa (`sat_calls_cached_skipped`, giảm `[chờ kết quả benchmark GĐ 3B]`% `sat_calls_total`) và rút ngắn `total_runtime_ms` khoảng `[chờ kết quả benchmark GĐ 3B]`%, trong khi bảo toàn tuyệt đối chuỗi phán quyết và `deduction_steps` (`cross_config_consistency = PASS`) *(kỳ vọng — xác nhận bằng GĐ 3B)*.
+![Hình E4: Hiệu quả cắt giảm số lần gọi SAT nhờ Model Caching](../Source/experiments/results/charts/rq4_model_caching.png)
+*Hình E4 (`rq4_model_caching.png`): Số lời gọi SAT thực tế (`sat_calls_total`) giữa không caching (`C0`) và có Model Caching (`C4`) trên từng màn chuẩn.*
+
+**Nhận xét định lượng (RQ3 & RQ4):**
+- **Tác động của Pure-Literal (`C1` vs. `C0` — RQ3):** Bật Pure-Literal Elimination giảm tổng `total_decisions` trên 10 màn chuẩn từ `693` xuống `516` (`-25.54%`), trong khi `total_backtracks` giữ nguyên (`530`, do phần lớn nhánh quay lui là các lời gọi kiểm tra phản chứng `UNSAT` bắt buộc phải vét hết nhánh mâu thuẫn). Tuy nhiên, chi phí quét literal thuần ở mỗi nút đệ quy khiến `solver_runtime_ms` tăng từ `103.033` lên `128.916 ms` (tổng `total_runtime_ms_median` tăng từ `163.638` lên `197.395 ms`, chậm hơn `20.63%`) khi không đi kèm heuristic thông minh.
+- **Tác động của Heuristic chọn biến (`C2`, `C3` vs. `C1` — RQ3):** Kết hợp thêm heuristic `moms` (`C2`) hoặc `jw` (`C3`) cắt tiếp `total_decisions` từ `516` xuống còn **`285`** (`-44.77%` so với `C1`, **`-58.87%`** so với `C0`), kéo `total_runtime_ms_median` xuống `166.261 ms` (`C2`) và `168.359 ms` (`C3`) — triệt tiêu gần như toàn bộ phần chậm do Pure-Literal gây ra ở `C1`. So với `C3` (`jw`), `C2` (`moms`) đạt cùng số `decisions`/`backtracks` (`285`/`530`) nhưng nhanh hơn ở cả hai lần đo (`164.893` vs `177.458 ms` ở lượt đo `jw`, và `166.261` vs `168.359 ms` ở lượt đo `moms`) nhờ chỉ duyệt các mệnh đề có kích thước nhỏ nhất. Trên lưới `3×3`, cả `C2` và `C3` đều đạt `total_decisions = 0` (giải hoàn toàn bằng Unit Propagation + Pure-Literal), nên chi phí tính heuristic không tạo ra bất lợi đáng kể so với `C0`.
+- **Tác động của Model Caching (`C4` vs. `C0` và `C6` vs. `C2` — RQ4):**
+  - So với `C0`, `C4` bỏ qua được **`656`** truy vấn SAT dư thừa (`sat_calls_cached_skipped = 656`), cắt giảm `sat_calls_total` từ `1,643` xuống **`987`** (**giảm `39.93%`**), giảm `total_decisions` từ `693` xuống `282` (`-59.31%`), giảm `total_propagations` từ `19,639` xuống `10,723` (`-45.40%`), và rút ngắn `total_runtime_ms_median` từ `163.638 ms` xuống **`124.663 ms`** (**nhanh hơn `23.82%`**).
+  - Trên nền DPLL đã tối ưu (`C6` vs. `C2`), Model Caching bỏ qua **`646`** truy vấn (`1,643` → **`997`**, **giảm `39.32%`**) và rút ngắn `total_runtime_ms_median` từ `166.261 ms` xuống **`116.285 ms`** (**nhanh hơn `30.06%`**), đưa `C6` thành cấu hình nhanh nhất toàn bảng (nhanh hơn `C0` **`28.94%`** với `total_decisions` chỉ còn **`122`**, giảm `82.40%` so với `C0`).
+  - Trong suốt toàn bộ benchmark, `cross_config_consistency = PASS` ở `100%` cặp màn chơi — chứng minh Model Caching bảo toàn tuyệt đối chuỗi phán quyết và `deduction_steps`.
 
 #### 5.5. Phân tích ca biên, ca thất bại, timeout và trường hợp kẹt giữa chừng
-Tuân thủ nguyên tắc báo cáo trung thực mọi trường hợp thất bại/timeout `(description.md 2.7, AI - Project 2.pdf 4.5)` và tùy chọn phân tích ca kẹt giữa chừng `(FAQ #13)`, Bảng 5.5 liệt kê đầy đủ các màn chơi kết thúc không ở trạng thái `SOLVED` (bao gồm cả ca biên `edge_cases/` và mọi ca `TIMEOUT`/`AMBIGUOUS` phát sinh trong quá trình chạy 10 màn chuẩn, nếu có).
+Tuân thủ nguyên tắc báo cáo trung thực mọi trường hợp không đạt `SOLVED` `(description.md 2.7, AI - Project 2.pdf 4.5, FAQ #13)`, Bảng 5.5 liệt kê toàn bộ các ca kết thúc khác `SOLVED` trên đủ 15 puzzle × 8 cấu hình (chỉ xuất hiện ở 2 màn `edge_cases/`, **không** có ca `TIMEOUT` hay `ERROR` nào ở bộ chuẩn và mở rộng).
 
-**Bảng 5.5: Tổng hợp các ca biên, ca kẹt giữa chừng, timeout và thất bại**
+**Bảng 5.5: Tổng hợp các ca biên (`edge_cases/`) — ghi nhận đầy đủ qua các cấu hình đại diện (`C0`, `C4`, `C5`, `C6`, `C7`)**
 
-| Màn chơi | Cấu hình | `terminal_status` | `solved_cells` / `total_cells` | `deduction_steps` | `sat_calls_total` | Thời gian tới lúc dừng (`ms`) | Nguyên nhân quan sát & Phân tích hành vi No-Guess |
+| Màn chơi | Cấu hình | `terminal_status` | `solved_cells` / `total_cells` | `deduction_steps` | `sat_calls_total` (`cached_skipped`) | Thời gian tới lúc dừng (`ms`, `median`) | Nguyên nhân quan sát & Phân tích hành vi No-Guess |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
-| `[chờ kết quả benchmark GĐ 3B]` | `[chờ GĐ 3B]` | `AMBIGUOUS` / `INCONSISTENT` / `TIMEOUT` | `[chờ GĐ 3B]` | `[chờ GĐ 3B]` | `[chờ GĐ 3B]` | `[chờ GĐ 3B]` | `[chờ phân tích thực tế GĐ 3B]` |
+| `edge_3x3_ambiguous` | `C0`–`C3` | `AMBIGUOUS` | `5 / 9` | `3` | `47` (`0`) | `1.875–2.092` | Suy diễn hợp lệ 3 bước đầu (`5/9` ô mở), tại `step = 3` còn 4 ô `['A2', 'B2', 'A3', 'B3']` đều cho cả $KB_3 \wedge \neg C_i$ và $KB_3 \wedge C_i$ là `SAT`. Agent ghi log `WARNING` và dừng với `VerdictCode.NOT_PROVABLE`, không đoán mò. |
+| `edge_3x3_ambiguous` | `C4`, `C6` | `AMBIGUOUS` | `5 / 9` | `3` | `20` (`27`) | `1.422` (`C4`) / `1.518` (`C6`) | Cùng điểm dừng `step = 3` (`5/9` ô mở), Model Caching bỏ qua `27/47` (`57.45%`) truy vấn SAT nhờ các mô hình `SAT` ở bước kẹt. |
+| `edge_3x3_ambiguous` | `C5` / `C7` | `AMBIGUOUS` | `5 / 9` | `3` | `47` (`0`) / `20` (`27`) | `3.625` (`C5`) / `2.107` (`C7`) | Hội tụ cùng chuỗi phán quyết và điểm dừng `step = 3` (`cross_config_consistency = PASS`). |
+| `edge_3x3_inconsistent` | `C0`–`C7` | `INCONSISTENT` | `2 / 9` | `0` | `1` (`0`) | `0.228–0.302` | Ngay tại bước $t = 0$, kiểm tra nhất quán ban đầu `DPLL(KB_0)` trả về `UNSAT` (`sat_calls_total = 1`). Agent dừng tức thì với `VerdictCode.INCONSISTENT`, không mở thêm ô nào. |
 
-**Khung nhận xét (RQ5):**
-- **Ca mơ hồ / Kẹt giữa chừng (`AMBIGUOUS`):** Tại bước dừng `t = [chờ GĐ 3B]`, mọi nhân vật chưa mở đều cho cả hai truy vấn $KB_t \wedge \neg C_i$ và $KB_t \wedge C_i$ là `SAT`. Agent trả về `UNKNOWN` cho toàn bộ ô còn lại và dừng an toàn mà không lật bất kỳ thẻ ẩn nào, tuân thủ nghiêm ngặt quy tắc No-Guess *(kỳ vọng — xác nhận bằng GĐ 3B)*.
-- **Ca mâu thuẫn (`INCONSISTENT`):** Ngay khi kiểm tra tính nhất quán ban đầu `DPLL(KB_t) = UNSAT`, Agent dừng tức thì và trả `INCONSISTENT` thay vì kết luận sai rằng mọi nhân vật đều đồng thời là `CRIMINAL` và `INNOCENT` *(kỳ vọng — xác nhận bằng GĐ 3B)*.
-- **Ca quá thời gian (`TIMEOUT`, nếu xuất hiện):** `[chờ phân tích GĐ 3B — nêu rõ cấu hình/màn chơi nào chạm ngưỡng 60s, nguyên nhân do bùng nổ mệnh đề Direct ở vùng lớn hay cây phân nhánh sâu của DPLL cơ bản, và cách cấu hình tối ưu C6/C7 khắc phục]`.
+**Nhận xét định lượng (RQ5):**
+- **Ca mơ hồ / Kẹt giữa chừng (`AMBIGUOUS`):** Tại `step = 3` của `edge_3x3_ambiguous` (tương ứng trạng thái có `2` thẻ mở sẵn + `3` bước suy diễn hợp lệ = `5/9` ô đã biết), toàn bộ 4 ô còn lại (`A2, B2, A3, B3`) đều cho cả hai truy vấn $KB_3 \wedge \neg C_i$ và $KB_3 \wedge C_i$ là `SAT`. Agent ghi cảnh báo `WARNING` vào logger `"agent"` và trả về bước kết thúc `cell=None, verdict=UNKNOWN, verdict_code=NOT_PROVABLE`, tuân thủ tuyệt đối quy tắc No-Guess. Model Caching cắt giảm được `27/47` truy vấn (`57.45%`) ngay cả khi rơi vào vùng mơ hồ vì có sẵn chứng nhân `SAT` cho nhiều ô cùng lúc.
+- **Ca mâu thuẫn (`INCONSISTENT`):** Trên `edge_3x3_inconsistent`, phép kiểm tra nhất quán bắt buộc ở đầu mỗi bước phát hiện `DPLL(KB_0) = UNSAT` chỉ sau đúng **`1` lời gọi SAT** (`0.228–0.302 ms`), chặn đứng nguy cơ bùng nổ logic (*ex falso quodlibet*) biến mọi ô thành `CRIMINAL`.
+- **Ca quá thời gian (`TIMEOUT`):** Không ghi nhận ca `TIMEOUT` nào (`0/360` lượt chạy) trong giới hạn `60,000 ms` — thời gian chạy dài nhất toàn chiến dịch chỉ là `199.405 ms` (`5x5_02` ở `C5`).
 
 #### 5.6. Hạn chế của hệ thống và Hướng cải thiện
-1. **Giới hạn của thuật toán DPLL thuần Python:** Bộ giải hiện cài đặt DPLL cổ điển bằng Python thuần theo đúng yêu cầu tự cài đặt `(description.md 2.4)`. So với các bộ giải SAT hiện đại (CDCL – *Conflict-Driven Clause Learning*, *Two-Watched Literals*, *non-chronological backjumping*, *restarts*), DPLL có thể lặp lại việc khám phá các nhánh xung đột tương đương khi kích thước lưới mở rộng vượt `5×5` hoặc khi xuất hiện nhiều ràng buộc `PARITY` (chuỗi XOR dễ tạo nhánh sâu với DPLL).
-2. **Tái mã hóa và giải độc lập theo từng bước:** Nếu ở mỗi bước suy diễn $t$, hệ thống gọi lại `encode_kb(public_state)` từ đầu và chạy DPLL không kế thừa mệnh đề học được giữa các truy vấn trong cùng $KB_t$, chi phí lặp lại có thể tăng đáng kể khi số ô lớn. Hướng cải thiện là mã hóa gia tăng (incremental CNF encoding) và tái sử dụng cấu trúc dữ liệu nội bộ của solver giữa các lần kiểm tra `assumptions`.
+1. **Giới hạn của thuật toán DPLL thuần Python:** Bộ giải hiện cài đặt DPLL cổ điển bằng Python thuần theo đúng yêu cầu tự cài đặt `(description.md 2.4)`. So với các bộ giải SAT hiện đại (CDCL – *Conflict-Driven Clause Learning*, *Two-Watched Literals*, *non-chronological backjumping*, *restarts*), DPLL có thể lặp lại việc khám phá các nhánh xung đột tương đương khi kích thước lưới mở rộng vượt `5×5` hoặc khi xuất hiện nhiều ràng buộc `PARITY` (chuỗi XOR dễ tạo nhánh sâu với DPLL, như thấy ở `ext_4x4_03` tốn `48.718 ms` trong solver).
+2. **Tái mã hóa và giải độc lập theo từng bước:** Ở mỗi bước suy diễn $t$, hệ thống gọi lại `encode_kb(public_state)` từ đầu và chạy DPLL không kế thừa mệnh đề học được giữa các truy vấn trong cùng $KB_t$. Điều này giải thích vì sao ở lưới `3×3` chi phí ngoài DPLL chiếm `~77%` tổng thời gian (`2.227 ms` tổng so với `0.487 ms` trong solver ở `3x3_01`). Hướng cải thiện là mã hóa gia tăng (incremental CNF encoding) và tái sử dụng cấu trúc dữ liệu nội bộ của solver giữa các lần kiểm tra `assumptions`.
 3. **Phạm vi tập dữ liệu đánh giá:** Tập chuẩn gồm 10 màn chơi đại diện cho ba kích thước `3×3`, `4×4`, `5×5` (cùng 3 màn mở rộng và 2 ca biên). Dù đủ bao phủ các mẫu clue và Extension yêu cầu, kích thước mẫu nhỏ khiến các nhận định về hiệu năng mang tính định tính–so sánh trên tập điển hình hơn là kết luận thống kê tổng quát trên hàng trăm puzzle ngẫu nhiên.
-4. **Hạn chế của chức năng Gợi ý (`Hint`) ở khía cạnh giải thích tối thiểu:** Nếu `Hint` chỉ ra nhân vật bị ép buộc dựa trên Entailment toàn cục của $KB_t$, việc tìm *tập con manh mối nhỏ nhất* (Minimal Unsatisfiable Subset – MUS) giải thích cho người chơi vì sao nhân vật đó bị ép buộc vẫn là bài toán tốn chi phí tính toán hơn và là hướng mở rộng tiềm năng cho phiên bản sau.
+4. **Hạn chế của chức năng Gợi ý (`Hint`) ở khía cạnh giải thích tối thiểu:** `HintEngine` hiện dùng duyệt liên kết vùng (Scope-Based BFS) để gom các manh mối có liên hệ với ô bị ép buộc mà không cần gọi thêm SAT; hướng mở rộng để tinh gọn lời giải thích hơn nữa là tìm *tập con manh mối tối giản không thỏa mãn* (Deletion-Based MUS).
 
 ### [KẾT THÚC BẢN NHÁP MỤC 5]
 
 ---
 
-## 9. Danh sách Phụ thuộc & Mốc thời gian Thực thi Benchmark
+## 9. Trạng thái Tích hợp & Thực thi Benchmark (cập nhật 26/11/2026)
 
-Để chuyển từ bản thiết kế này sang chạy thực nghiệm thật tại **GĐ 3B (`16:00 ngày 27/11 – 14:00 ngày 28/11`)**, TV4 phụ thuộc trực tiếp vào đầu ra của TV1, TV2, TV3 và cần bàn giao kịp cho TV5 theo đúng `schedule.md` (Mục 1, 2, 3):
-
-| Bên cung cấp | Đầu vào TV4 cần để chạy Benchmark | Mốc hạn chót chính (`schedule.md`) | Rủi ro nếu trễ & Phương án dự phòng của TV4 |
-| :--- | :--- | :--- | :--- |
-| **TV1** *(chủ trì)* + Cả nhóm | Đóng băng `core/contracts/models.py` & `interfaces.py` (chốt đầy đủ `CNFStats`, `SATMetrics`, `DeductionStep`, chữ ký `IGameEngine`, `ICNFEncoder`, `ISATSolver`, `ILogicAgent`). | **23/11** *(trước 18:00 — GĐ 0, STT 1)* | Nghẽn khởi đầu code `agent/` và khung `experiments/benchmark.py`. TV4 đọc kỹ `plan.md 1.1` trước để chốt nhanh trong buổi họp 23/11. |
-| **TV1** | • `GameEngine` thật không rò rỉ đáp án ẩn + `PuzzleLoader`/`PuzzleValidator`.<br>• Bộ **10 puzzle JSON chuẩn** (`4×3×3`, `4×4×4`, `2×5×5`, vượt mức 6 màn của `FAQ #2`) + 3 màn `extensions/` + `edge_cases/` (`Ambiguous`, `Inconsistent`). | • **Đã giao ngày 23/11** (merge vào `dev`, sớm hơn hạn gốc 23:59 ngày 25/11 *(STT 2)*).<br>• Tích hợp `GameEngine` thật ở **Mốc 2 ngày 26/11** (`10:00–20:00`, *STT 8*).<br>• Duyệt `uniqueness.py` trên 15 puzzle: TV4 đã chạy thử với `StubCNFEncoder` ngày 23/11; chạy lại với encoder thật của TV2 vào **tối 26/11** (`18:00–23:59`, *STT 8*). | Nếu TV1 giao lẻ từng màn, TV4 chạy `uniqueness.py` và test benchmark theo từng lô (`3×3` → `4×4` → `5×5`) ngay khi có file JSON lên Git `(schedule.md mục 3)`. |
-| **TV2** | • `ICNFEncoder` thật đủ 6 mẫu clue + ≥ 2 Extensions + trả về chính xác `CNFStats` (`primary_vars`, `aux_vars`, số mệnh đề).<br>• Hỗ trợ chuyển đổi sạch cả 2 chiến lược **`direct` và `sinz`** để chạy so sánh **RQ2**. | • Hạn chính GĐ 1: **23:59 ngày 25/11** *(STT 3, gồm đủ cả Direct & Sinz)*.<br>• Tích hợp Mốc 1: **26/11** *(08:00–18:00, STT 7)*. | **Dự phòng nếu trễ:** Nếu sáng 28/11 vẫn chưa có `sinz`, chạy trước nhóm cấu hình `direct` (`C0`–`C4`, `C6`), xuất CSV/biểu đồ nháp và ping TV2 chốt `sinz` chậm nhất **12:00 ngày 28/11** `(schedule.md mục 3)`. |
-| **TV3** | • `ISATSolver` thuần Python đủ 6 yêu cầu + `assumptions` + 4 `SATMetrics` (`decisions`, `propagations`, `backtracks`, `runtime_ms`) tất định.<br>• Các cờ tối ưu `enable_pure_literal` và `heuristic` (`lexicographic` \| `moms` \| `jw`) + cơ chế kiểm tra `timeout` an toàn trên Windows.<br>• Phối hợp tối ưu nếu `5×5` quá chậm. | • Hạn chính GĐ 1: **23:59 ngày 25/11** *(STT 4, gồm đủ DPLL + `heuristics.py`)*.<br>• Tích hợp Mốc 1: **26/11** *(08:00–18:00, STT 7)*. | **Dự phòng nếu trễ / chậm `5×5`:** Nếu sáng 28/11 thiếu heuristic, chạy trước cấu hình sẵn có và chốt chậm nhất **12:00 ngày 28/11** `(schedule.md mục 3)`. Nếu `5×5` chạm ngưỡng `timeout = 60s` ở cấu hình baseline (`C0`), giữ nguyên kết quả `TIMEOUT` trung thực và phối hợp TV2 + TV3 kích hoạt ngay tổ hợp dự phòng `C7` (`Sinz + Pure-Literal + MOMs + Model Caching`) trong tối 27/11 `(plan.md 3.1, schedule.md STT 10)`. |
-| **TV4 (Nguyên)** *(Tự cam kết giao đúng hạn)* | • Khung `experiments/benchmark.py` + `plots.py` + `uniqueness_report.py` chạy thông với `StubCNFEncoder`.<br>• Kết quả kiểm định `uniqueness.py` trên 15 puzzle của TV1.<br>• Chạy Benchmark đầy đủ khi TV2 giao encoder thật, xuất CSV + biểu đồ PNG 300 DPI.<br>• Hoàn thiện mục *Algorithms* & *Experiments* + Phụ lục AI bàn giao cho **TV5** biên tập `Report.pdf`. | • Khung script: **23:59 ngày 25/11** *(GĐ 1, STT 5)*.<br>• Duyệt `uniqueness.py`: **23:59 ngày 26/11** *(GĐ 2, STT 8)*.<br>• Chốt Benchmark & biểu đồ: **14:00 ngày 28/11** *(GĐ 3B, STT 10)*.<br>• Giao bản viết cho TV5: **trước 10:00 sáng ngày 29/11** *(GĐ 4B; hạn nộp chung **23:59 ngày 29/11/2026**)*. | Viết xong 100% khung báo cáo và script vẽ biểu đồ trước GĐ 3B để ngay khi có encoder thật của TV2 chỉ cần chạy sinh CSV/biểu đồ, điền bảng và viết phân tích định lượng trong tối 28/11. |
+Toàn bộ các phụ thuộc từ **TV1, TV2, TV3** đã được hợp nhất trên `origin/dev` (`9d2140b`) và kiểm chứng thực tế ở GĐ 2 (Mốc 1) + GĐ 3B:
+- **TV1 (`engine/`, `puzzles/`):** `GameEngine` thật + đủ 15 puzzle (`10` standard, `3` extension, `2` edge_case) đã có mặt trên `origin/dev`; kiểm định `uniqueness_report.py` xác nhận `13/13` màn giải được đều `UNIQUE` (`matches_hidden_solution=true`).
+- **TV2 (`logic/`):** `CNFEncoder` (hỗ trợ đủ `direct` & `sinz`, 6 mẫu cơ bản + `INTERSECTION`, `COMMON_NEIGHBORS`, `CORNERS`, `BETWEEN`, `PARITY`, `COMPARE_COUNTS`) đã merge vào `origin/dev` qua **PR #3** (`9d2140b`).
+- **TV3 (`solver/`):** `DPLLSolver` với `lexicographic`, `moms`, `jw` và `enable_pure_literal` đã merge vào `origin/dev` (PR #1, PR #4), giải toàn bộ `5×5` trong `< 200 ms` (`0 TIMEOUT`).
+- **Điểm nghẽn cứng đang chờ thành viên khác:** (1) Review/merge PR nhánh `feat/tv4-benchmark-final` vào `dev`; (2) TV5 hoàn thành GUI + `Source/main.py` cho E2E GĐ 3A (`Hint` + `Auto Solve` animated); (3) TV5 biên tập `Report.pdf` tổng, quay Video Demo Google Drive (Incognito) và cả nhóm chốt Contribution Matrix (GĐ 4B/4C).
 
 ---
 
-## Phụ lục nhỏ: Các điểm còn mở cần nhóm xác nhận trong buổi họp GĐ 0 (23/11)
+## 10. Phụ lục LLM (AI Appendix — Phần TV4)
 
-1. **Ca kẹt giữa chừng (`FAQ #13`):** Nhóm giữ 10 màn chuẩn đều giải được (`SOLVED`) và tách 2 ca biên ở `edge_cases/` (`edge_3x3_ambiguous`, `edge_3x3_inconsistent`). *(Đã chốt theo bộ puzzle hiện tại.)*
-2. **Danh sách heuristic TV3 cài đặt:** TV3 sẽ cài đủ cả `moms` và `jw` hay chỉ 1 heuristic? *(Cần xác nhận với nhóm — TV3).*
-3. **Vùng `BOUNDARY` ở Extension 1:** `BOUNDARY` có trong `description.md 2.2` nhưng không có trong `plan.md 2.2`; xác nhận TV2 có cài `BOUNDARY` (vùng 8/12/16 ô) hay chỉ cài 4 vùng mở rộng trong `plan.md 2.2` (`INTERSECTION`, `COMMON_NEIGHBORS`, `CORNERS`, `BETWEEN`). *(Cần xác nhận với nhóm — TV2 & TV1).*
-4. **Cơ chế Timeout trên Windows:** Thống nhất truyền tham số `deadline` vào `ISATSolver.solve()` để vừa dừng đúng 60 giây vừa bảo toàn số liệu tích lũy, hay bọc bằng `multiprocessing` ở `benchmark.py`? *(Cần xác nhận với nhóm — TV3 & TV4).*
-5. **Quy ước tên file JSON / `puzzle_id` và số thẻ mở sẵn (`FAQ #8`):** Chốt danh sách `puzzle_id` chuẩn để khớp giữa `puzzles/`, `benchmark.py`, GUI List Map và `Report.pdf`. *(Cần xác nhận với nhóm — TV1 & TV5).*
-6. **Ngôn ngữ thống nhất của `Report.pdf` (`description.md 4.2`):** Chốt toàn bộ báo cáo viết bằng **tiếng Việt** hay **tiếng Anh** để TV4 đồng bộ ngôn ngữ bản nháp mục *Experiments* trước ngày 28/11. *(Cần xác nhận với nhóm — TV5 & cả nhóm).*
+Theo yêu cầu của `plan.md` (Mục 3) và `schedule.md` (Mục 2, STT 11), bảng dưới tóm tắt các nhóm prompt chính/tiêu biểu đã dùng trong phạm vi công việc TV4 (không chứa khóa bí mật hay dữ liệu nhạy cảm):
+
+| STT | Nhóm tác vụ TV4 | Nội dung prompt tiêu biểu (tóm tắt) | Đầu ra được kiểm chứng bởi người/test |
+| :---: | :--- | :--- | :--- |
+| 1 | Rà soát hợp đồng & thiết kế giao thức TV4 | *“Rà soát `core/contracts/models.py` và `interfaces.py` dưới góc độ TV4: đề xuất quy ước xử lý `AMBIGUOUS`/`INCONSISTENT`, tránh đếm gấp đôi khi `submit_verdict` gọi lại agent, và callback `on_step` cho animation.”* | `docs/tv4_contract_review_and_test_plan.md`, `docs/tv4_agent_conventions.md` |
+| 2 | Cài đặt `Source/agent/` & kiểm thử đơn vị | *“Cài đặt `entailment.py` (Model Caching bật/tắt được), `kb_cache.py` (LRU ≤ 8 theo khóa KB bất biến), `logic_agent.py` (No-Guess loop row-major), `hint_engine.py` (Scope-Based BFS), `uniqueness.py` (blocking clause chỉ trên biến chính) kèm unit test `test_agent/`.”* | `Source/agent/*.py`, `Source/tests/test_agent/*.py` (toàn bộ pass trên `pytest`) |
+| 3 | Xây dựng khung thực nghiệm & biểu đồ | *“Viết `experiments/configs.py`, `encoder_factory.py`, `solver_factory.py`, `benchmark.py` (C0–C7, timeout `multiprocessing` trên Windows, `deterministic_check`, `cross_config_consistency`), `uniqueness_report.py` và `plots.py` (RQ1–RQ4).”* | `Source/experiments/*.py`, `Source/tests/test_experiments/*.py` |
+| 4 | Tích hợp thực nghiệm GĐ 3B & đối soát báo cáo | *“Tích hợp cục bộ `CNFEncoder` thật (Direct + Sinz) với `DPLLSolver`, chạy `uniqueness_report.py` trên 15 puzzle, chạy `benchmark.py --include-extensions --repeats 3 --timeout-s 60`, sinh 4 biểu đồ PNG, cập nhật `report_tv4_experiments.md` / `report_tv4_algorithms.md` khớp 1-1 CSV gốc và audit độc lập.”* | `uniqueness_report.csv`, `benchmark_*.csv`, `charts/*.png`, `209 passed` trên `pytest`, subagent audit 7/7 PASS |
+
+---
+
+## Phụ lục nhỏ: Trạng thái các điểm mở GĐ 0 (đã chốt đến 26/11/2026)
+
+1. **Ca kẹt giữa chừng (`FAQ #13`):** Đã chốt tách 2 ca biên ở `edge_cases/` (`edge_3x3_ambiguous`, `edge_3x3_inconsistent`) và giữ 10 màn chuẩn đều `SOLVED` (`UNIQUE`).
+2. **Danh sách heuristic TV3:** TV3 đã cài đủ cả `lexicographic`, `moms`, `jw` và cờ `enable_pure_literal`; benchmark GĐ 3B chọn `moms` làm `best_heur` cho `C6`/`C7`.
+3. **Vùng mở rộng (Extension 1):** TV1/TV2 đã cài đủ `INTERSECTION`, `COMMON_NEIGHBORS`, `CORNERS`, `BETWEEN` (cùng `PARITY`, `COMPARE_COUNTS`), kiểm chứng trên 3 màn `extensions/`.
+4. **Cơ chế Timeout trên Windows:** Đã chốt dùng `multiprocessing` (`spawn`) ở `experiments/benchmark.py` (`timeout_s = 60`).
+5. **Quy ước `puzzle_id` & thẻ mở sẵn (`FAQ #8`):** Đã chốt cố định qua `3x3_01..04` (`2` thẻ), `4x4_01..04` (`3` thẻ), `5x5_01..02` (`5` thẻ), `ext_3x3_01`, `ext_4x4_02..03`, `edge_3x3_ambiguous`, `edge_3x3_inconsistent`.
+6. **Ngôn ngữ thống nhất của `Report.pdf` (`description.md 4.2`):** Toàn bộ tài liệu TV4 đang viết bằng **tiếng Việt**; chờ TV5 xác nhận đồng bộ ngôn ngữ khi biên tập `Report.pdf` tổng ở GĐ 4B.

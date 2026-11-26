@@ -1,6 +1,6 @@
 # Bản nháp Mục Algorithms — Phần Thành viên 4 (TV4: Logic Agent)
 
-> **Trạng thái tài liệu:** Bản nháp chuẩn bị cho mục *Algorithms* trong `Report.pdf` (phần TV4: Entailment, No-Guess Deduction Loop, Hint, Uniqueness Check và Phân tích độ phức tạp; phần DPLL SAT do TV3 phụ trách — plan.md 2.3, 2.4). Đã đồng bộ tên kiểu/trường theo `Source/core/contracts/` (đã đóng băng) và quy ước trong `docs/tv4_agent_conventions.md`. Mọi số liệu thực nghiệm chưa có được giữ nguyên ở trạng thái `[chờ kết quả benchmark GĐ 3B]`.
+> **Trạng thái tài liệu:** Hoàn thiện cho mục *Algorithms* trong `Report.pdf` (phần TV4: Entailment, No-Guess Deduction Loop, Hint, Uniqueness Check và Phân tích độ phức tạp; phần DPLL SAT do TV3 phụ trách — plan.md 2.3, 2.4). Đã đồng bộ tên kiểu/trường theo `Source/core/contracts/` (đã đóng băng), `docs/tv4_agent_conventions.md` và cập nhật số liệu thực nghiệm GĐ 3B khớp 1-1 với `docs/report_tv4_experiments.md`.
 
 ---
 
@@ -410,17 +410,17 @@ Giả sử màn chơi giải hết hoàn toàn sau $T = n - k_0$ bước (với 
 - **Hint:** Tốn tối đa $1 + u_t$ lời gọi cho Pha 1 (có Model Caching); nếu bật tối giản tập manh mối (Pha 2) sẽ tốn thêm tối đa $|\mathcal{R}_t| \le n - 1$ lời gọi SAT.
 - **Chi phí mỗi lời gọi DPLL SAT:** Về mặt lý thuyết, SAT là bài toán NP-complete nên một lời gọi DPLL có độ phức tạp thời gian trường hợp xấu nhất là $O\!\left(2^{|V|} \cdot |F|\right)$, trong đó $V = V_{\text{primary}} \cup V_{\text{aux}}$ là tập toàn bộ biến (kể cả biến chính và biến phụ sinh bởi chiến lược mã hóa Direct hay Sequential Counter/Sinz của TV2 — plan.md 2.2) và $|F|$ là kích thước công thức (tổng số literal trong các mệnh đề). Tuy nhiên, trong miền $n \le 25$, cấu trúc cục bộ của manh mối kết hợp với Unit Propagation và heuristic chọn biến (MOMs/JW của TV3) giúp không gian tìm kiếm thực tế được cắt tỉa mạnh.
 
-### 6.3. Bảng tổng hợp chặn trên lý thuyết và khung đối chiếu thực nghiệm
+### 6.3. Bảng tổng hợp chặn trên lý thuyết và đối chiếu thực nghiệm (GĐ 3B)
 
-Bảng dưới tổng hợp chặn trên số lời gọi SAT cho toàn màn chơi với giả định game gốc $k_0 = 1$ thẻ mở sẵn (khi tăng $k_0 \in \{2, 3, 4\}$ theo FAQ #8, số bước $T = n - k_0$ giảm tương ứng):
+Bảng dưới tổng hợp chặn trên lý thuyết (giả định $k_0 = 1$ thẻ mở sẵn, $T = n - 1$) và số liệu thực nghiệm trung bình trên bộ **10 màn chuẩn** (trong đó bộ dữ liệu thật có $k_0 = 2, 3, 5$ tương ứng $T = 7, 13, 20$ bước suy diễn, `direct` encoding: `C0` không cache vs. `C4` có Model Caching và `C6` tối ưu):
 
-| Kích thước lưới | $n = N^2$ | Số bước tối đa $T$ ($k_0 = 1$) | Chặn trên tổng lời gọi SAT (Không cache) | Chặn trên tổng lời gọi SAT (Có Model Caching) | Tổng lời gọi SAT thực tế (Không cache) | Tổng lời gọi SAT thực tế (Có Model Caching) | Thời gian chạy thực tế |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| $3 \times 3$ | $9$ | $8$ | $80$ | $44$ | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] |
-| $4 \times 4$ | $16$ | $15$ | $255$ | $135$ | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] |
-| $5 \times 5$ | $25$ | $24$ | $624$ | $324$ | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] | [chờ kết quả benchmark GĐ 3B] |
+| Kích thước lưới | $n = N^2$ | Chặn trên tổng lời gọi SAT (Không cache, $k_0=1$) | Chặn trên tổng lời gọi SAT (Có Model Caching, $k_0=1$) | Tổng lời gọi SAT thực tế trung bình — Không cache (`C0`) | Tổng lời gọi SAT thực tế trung bình — Có Model Caching (`C4` / `C6`) | Thời gian chạy thực tế trung bình `C6` (`ms`, `median`) |
+| --- | --- | --- | --- | --- | --- | --- |
+| $3 \times 3$ (4 màn, $k_0=2, T=7$) | $9$ | $80$ | $44$ | `54.25` (`53–56`) | `34.75` (`34–35`) / `35.00` (`35`) | `2.408` (`2.136–2.867`) |
+| $4 \times 4$ (4 màn, $k_0=3, T=13$) | $16$ | $255$ | $135$ | `169.50` (`156–187`) | `101.50` (`94–104`) / `103.00` (`100–104`) | `8.965` (`7.428–10.271`) |
+| $5 \times 5$ (2 màn, $k_0=5, T=20$) | $25$ | $624$ | $324$ | `374.00` (`351–397`) | `221.00` (`215–227`) / `222.50` (`215–230`) | `35.397` (`24.479–46.315`) |
 
-*(So sánh đầy đủ trên bộ 10 màn chuẩn `4×3×3`, `4×4×4`, `2×5×5` — cùng tùy chọn 3 màn `extensions/` và 2 màn `edge_cases/` — qua các cấu hình Direct/Sinz và DPLL heuristics sẽ được trình bày trong mục Experiments — [chờ kết quả benchmark GĐ 3B].)*
+*(So sánh đầy đủ trên bộ 10 màn chuẩn `4×3×3`, `4×4×4`, `2×5×5`, 3 màn `extensions/` và 2 màn `edge_cases/` qua 8 cấu hình `C0`–`C7` Direct/Sinz và DPLL heuristics xem chi tiết tại `docs/report_tv4_experiments.md`.)*
 
 ---
 

@@ -78,7 +78,18 @@ def test_discover_puzzles_counts() -> None:
     assert len(with_ext) == 15
 
 
-def test_encoder_factory_fallback_and_sinz_skip() -> None:
+def test_encoder_factory_real_and_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    sel_real_dir = make_encoder("direct")
+    assert sel_real_dir.is_stub is False
+    assert sel_real_dir.effective_encoding == "direct"
+    assert sel_real_dir.encoder is not None
+
+    sel_real_sinz = make_encoder("sinz")
+    assert sel_real_sinz.is_stub is False
+    assert sel_real_sinz.effective_encoding == "sinz"
+    assert sel_real_sinz.encoder is not None
+
+    monkeypatch.setattr("experiments.encoder_factory._try_load_real_encoder", lambda strategy: None)
     with pytest.warns(UserWarning, match="StubCNFEncoder"):
         sel_dir = make_encoder("direct")
     assert sel_dir.is_stub is True
@@ -117,7 +128,7 @@ def test_small_benchmark_csv_schema_and_cross_config_consistency(tmp_path: Path)
         assert tuple(reader.fieldnames or ()) == RAW_COLUMNS
         assert len(RAW_COLUMNS) == 31
         loaded_raw = list(reader)
-        assert all(r["encoding"] == "stub" for r in loaded_raw)
+        assert all(r["encoding"] == "direct" for r in loaded_raw)
         assert all(r["terminal_status"] == "SOLVED" for r in loaded_raw)
         assert all(r["reveal_waves"] == "" for r in loaded_raw)
 
@@ -193,7 +204,10 @@ def test_cross_config_consistency_fail_and_single_config_na() -> None:
     assert all(r["cross_config_consistency"] == "FAIL" for r in missing_trace_sum)
 
 
-def test_sinz_config_records_skipped_no_encoder(tmp_path: Path) -> None:
+def test_sinz_config_records_skipped_no_encoder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("experiments.encoder_factory._try_load_real_encoder", lambda strategy: None)
     puzzle_path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
     configs = select_configs(["C5"])
     raw_rows, summary_rows, _ = run_benchmark(
@@ -208,6 +222,30 @@ def test_sinz_config_records_skipped_no_encoder(tmp_path: Path) -> None:
     assert raw_rows[0]["encoding"] == "sinz"
     assert summary_rows[0]["terminal_status"] == "SKIPPED_NO_ENCODER"
     assert summary_rows[0]["cross_config_consistency"] == "NA"
+
+
+def test_real_sinz_and_rq2_chart(tmp_path: Path) -> None:
+    puzzle_path = PUZZLES_DIR / "3x3" / "3x3_01_precinct_basics.json"
+    configs = select_configs(["C0", "C5"])
+    raw_rows, summary_rows, solved_rates = run_benchmark(
+        configs=configs,
+        puzzles=[("standard", puzzle_path)],
+        repeats=1,
+        timeout_s=15.0,
+        out_dir=tmp_path,
+    )
+    assert solved_rates == {"C0": 1.0, "C5": 1.0}
+    by_cfg = {r["config_id"]: r for r in raw_rows}
+    assert by_cfg["C0"]["encoding"] == "direct"
+    assert by_cfg["C5"]["encoding"] == "sinz"
+    assert all(r["cross_config_consistency"] == "PASS" for r in summary_rows)
+
+    charts = generate_plots(
+        summary_csv=tmp_path / "benchmark_summary.csv",
+        out_dir=tmp_path / "charts",
+    )
+    chart_names = {p.name for p in charts}
+    assert {"rq1_scalability.png", "rq2_direct_vs_sinz.png"}.issubset(chart_names)
 
 
 def test_repeats_deterministic_check_and_puzzle_level_max_region(tmp_path: Path) -> None:

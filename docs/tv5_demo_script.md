@@ -10,7 +10,11 @@
 
 ### Phần 1 — Giới thiệu & Khởi động ứng dụng (0:00 – 0:45)
 - Giới thiệu tên đề tài **Project 2: Griductive Solver**, nguyên tắc **No-Guess Rule** và kiến trúc phân tách **Game Engine (Hidden World)** ↔ **Logic Agent (Public World)** ↔ **GUI**.
-- Mở terminal trong thư mục `Source/`, chạy lệnh `python main.py` để chứng minh khởi động mượt, không lỗi.
+- **Liệt kê ngắn các thuật toán lõi đã cài đặt (theo FAQ #14):**
+  - **Mã hóa CNF tự động (TV2):** hỗ trợ 6 mẫu manh mối lõi + phần mở rộng (`PARITY` qua chuỗi XOR Tseitin, `COMPARE_COUNTS`, vùng nâng cao), kèm 2 chiến lược mã hóa lực lượng **Direct Combinatorial** và **Sequential Counter (Sinz)**.
+  - **Bộ giải DPLL SAT thuần Python (TV3):** Unit Propagation, Conflict Detection, phân nhánh đệ quy/quay lui tất định, kết hợp **Pure-Literal Elimination** và các heuristic chọn biến (**Lexicographic**, **MOMs**, **Jeroslow-Wang**).
+  - **Tác tử Suy diễn Logic (TV4):** kiểm tra **Entailment via Refutation** ($KB_t \land \neg C_i$, $KB_t \land C_i$), tối ưu **Model Caching** & KB cache, kiểm chứng tính duy nhất bằng **Blocking Clause (Uniqueness Check)** và gợi ý tối giản (`Hint`).
+- Mở terminal trong thư mục `Source/`, chạy lệnh `python main.py --strict` để chứng minh hệ thống lắp ghép đủ 5 module thật và khởi động mượt, không lỗi.
 
 ### Phần 2 — Trình diễn Giao diện Đồ họa GUI (0:45 – 2:15) *[5 điểm GUI]*
 - Giới thiệu bố cục 2 cột:

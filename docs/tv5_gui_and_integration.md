@@ -32,7 +32,7 @@ GameEngine (TV1) ◄── (inject logic_agent & encoder) ┘
 ```
 
 - Khi người dùng bấm **Load** màn chơi mới hoặc **Restart**, `MainWindow` tự động gọi `agent.clear_cache()` và `agent.reset_stats()` (theo đúng quy ước TV4) để số liệu SAT và bộ đệm KB không bị nhiễu giữa các phiên chơi.
-- Hỗ trợ các tham số dòng lệnh (`--puzzle`, `--encoding direct|sinz`, `--heuristic lexicographic|moms|jw`, `--pure-literal`) phục vụ kiểm thử nhanh các cấu hình khác nhau ngay trên GUI.
+- Hỗ trợ các tham số dòng lệnh (`--puzzle`, `--encoding direct|sinz`, `--heuristic lexicographic|moms|jw`, `--no-pure-literal`, `--no-model-cache`, `--strict`) phục vụ kiểm thử nhanh các cấu hình khác nhau ngay trên GUI.
 
 ---
 

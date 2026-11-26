@@ -373,17 +373,19 @@ class MainWindow(QMainWindow):
                 "Click a sealed dossier to judge, or an open card to trace clues."
             )
 
+    def _update_puzzle_subtitle(self, state: PublicState) -> None:
+        self.puzzle_subtitle.setText(
+            f"Case: {state.puzzle_name}  •  {state.grid_size}×{state.grid_size} Grid  •  "
+            f"{len(state.revealed_cells)}/{len(state.characters)} Open"
+        )
+
     def _apply_fresh_puzzle_state(self, state: PublicState) -> None:
         self._current_state = state
         self._reset_agent_cache_and_stats()
         self.board_widget.clear_highlights()
         self.board_widget.render_state(state)
         self.trace_panel.reset(state)
-
-        self.puzzle_subtitle.setText(
-            f"Case: {state.puzzle_name}  •  {state.grid_size}×{state.grid_size} Grid  •  "
-            f"{len(state.revealed_cells)}/{len(state.characters)} Open"
-        )
+        self._update_puzzle_subtitle(state)
         self._set_controls_busy(False)
         self._set_feedback(
             "INFO",
@@ -504,6 +506,7 @@ class MainWindow(QMainWindow):
 
         self._current_state = response.public_state
         self.board_widget.render_state(self._current_state)
+        self._update_puzzle_subtitle(self._current_state)
         self.trace_panel.update_progress(self._current_state)
         self.trace_panel.record_manual_verdict(response, active_clues_before)
 
@@ -618,9 +621,19 @@ class MainWindow(QMainWindow):
         )
         self._worker.start()
 
+    def _release_worker(self) -> None:
+        """Wait briefly for the worker thread to finish exiting before clearing reference."""
+        worker = self._worker
+        if worker is not None:
+            if worker.isRunning():
+                worker.wait(500)
+            worker.deleteLater()
+        self._worker = None
+
     def _on_auto_step(self, step: DeductionStep, snapshot: PublicState) -> None:
         self._current_state = snapshot
         self.board_widget.render_state(snapshot)
+        self._update_puzzle_subtitle(snapshot)
         if step.cell is not None and step.verdict_code == VerdictCode.ACCEPTED:
             self.board_widget.set_clue_highlight(step.cell, ())
             ch = snapshot.get_character(step.cell)
@@ -637,10 +650,11 @@ class MainWindow(QMainWindow):
         steps: list[DeductionStep],
         final_state: PublicState,
     ) -> None:
-        self._worker = None
+        self._release_worker()
         self._current_state = final_state
         self.board_widget.clear_highlights()
         self.board_widget.render_state(final_state)
+        self._update_puzzle_subtitle(final_state)
         self.trace_panel.update_progress(final_state)
         self._set_controls_busy(False)
 
@@ -667,7 +681,7 @@ class MainWindow(QMainWindow):
             )
 
     def _on_auto_failed(self, error_msg: str) -> None:
-        self._worker = None
+        self._release_worker()
         self._set_controls_busy(False)
         self._set_feedback("CONTRADICTED", f"Auto Solve error: {error_msg}")
 

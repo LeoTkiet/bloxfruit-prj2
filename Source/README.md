@@ -98,18 +98,26 @@ $env:QT_QPA_PLATFORM="offscreen"; pytest Source/tests/test_gui
 Once all modules are integrated on `dev`/`main`:
 
 ```bash
-python -m experiments.benchmark
+python Source/experiments/benchmark.py --include-extensions --repeats 3 --timeout-s 60 --best-heur moms
 ```
 
-(Run with `PYTHONPATH=Source` or from inside `Source/`.)
+Or run as a module from the repository root:
+
+```bash
+# PowerShell:
+$env:PYTHONPATH="Source"; python -m experiments.benchmark --include-extensions
+
+# Bash:
+# PYTHONPATH=Source python -m experiments.benchmark --include-extensions
+```
 
 ---
 
 ## 6. Project Architecture & Directory Layout
 
 ```text
-├── main.py              # [TV5] Entry point & Dependency Injection wiring
 Source/
+├── main.py              # [TV5] Entry point & Dependency Injection wiring
 ├── requirements.txt     # [TV5] Python dependencies
 ├── README.md            # [TV5] Setup & usage guide
 ├── core/contracts/      # [Frozen] Shared immutable models & Protocol interfaces

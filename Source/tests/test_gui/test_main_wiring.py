@@ -45,3 +45,29 @@ def test_wire_system_returns_contract_compliant_engine_and_agent() -> None:
     assert isinstance(engine, IGameEngine)
     assert isinstance(agent, ILogicAgent)
     assert mode_desc != ""
+
+
+def test_wire_system_strict_uses_full_production_stack() -> None:
+    """Guarantees `wire_system(strict=True)` connects real TV1–TV4 modules with no fallback."""
+    engine, agent, mode_desc = wire_system(strict=True)
+    assert isinstance(engine, IGameEngine)
+    assert isinstance(agent, ILogicAgent)
+    assert "Production stack" in mode_desc
+    assert "CNFEncoder" in mode_desc
+    assert "DPLLSolver" in mode_desc
+    assert "DeductiveLogicAgent" in mode_desc
+
+    # End-to-end smoke solve on a real puzzle with the full production stack
+    puzzle_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "puzzles"
+        / "3x3"
+        / "3x3_01_precinct_basics.json"
+    )
+    engine.load_puzzle(puzzle_path)
+    steps = agent.run_auto_solve(engine)
+    assert engine.get_public_state().is_solved is True
+    assert len(steps) == 7
+    assert any(
+        (not q.cached) for step in steps for q in step.sat_queries
+    )

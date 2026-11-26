@@ -81,12 +81,13 @@ def test_manual_verdict_distinguishes_all_verdict_codes(qtbot) -> None:
     assert win.feedback_banner.property("feedbackKind") == "INCONSISTENT"
     assert a2.is_revealed is False
 
-    # 4. ACCEPTED on B1 as CRIMINAL -> flips card and reveals its clue
+    # 4. ACCEPTED on B1 as CRIMINAL -> flips card, updates subtitle, and reveals its clue
     qtbot.mouseClick(b1, Qt.MouseButton.LeftButton)
     qtbot.mouseClick(win.btn_mark_criminal, Qt.MouseButton.LeftButton)
     assert win.feedback_banner.property("feedbackKind") == "ACCEPTED"
     assert b1.is_revealed is True
     assert b1.status == Status.CRIMINAL
+    assert "3/9 Open" in win.puzzle_subtitle.text()
     assert "C1 is Innocent." in b1.clue_label.text()
     assert win.trace_panel.step_count == 4
 

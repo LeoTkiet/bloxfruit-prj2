@@ -159,3 +159,27 @@ def test_dpll_config_invalid_heuristic_raises() -> None:
     """DPLLConfig with invalid heuristic name must raise ValueError."""
     with pytest.raises(ValueError, match="Invalid heuristic"):
         DPLLConfig(heuristic="invalid_heuristic")  # type: ignore[arg-type]
+
+
+def test_cache_no_stale_hit_on_ephemeral_formulas() -> None:
+    """Ephemeral CNFFormula instances whose memory addresses are reused must not hit stale cache."""
+    solver = DPLLSolver()
+    for i in range(100):
+        # Alternate between SAT and UNSAT ephemeral formulas
+        sat_cnf = CNFFormula(clauses=((1,),), num_primary_vars=1)
+        res_sat = solver.solve(sat_cnf)
+        assert res_sat.is_sat is True
+        assert res_sat.model == {1: True}
+        del sat_cnf
+
+        unsat_cnf = CNFFormula(clauses=((1,), (-1,)), num_primary_vars=1)
+        res_unsat = solver.solve(unsat_cnf)
+        assert res_unsat.is_sat is False
+        assert res_unsat.model is None
+        del unsat_cnf
+
+        sat_false_cnf = CNFFormula(clauses=((-1,),), num_primary_vars=1)
+        res_sat_false = solver.solve(sat_false_cnf)
+        assert res_sat_false.is_sat is True
+        assert res_sat_false.model == {1: False}
+        del sat_false_cnf

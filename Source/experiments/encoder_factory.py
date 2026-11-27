@@ -15,7 +15,7 @@ from experiments.stub_encoder import StubCNFEncoder
 logger = logging.getLogger("experiments")
 
 # Single-line override once TV2 finalizes class path, e.g. "logic.cnf_encoder:CNFEncoder"
-REAL_ENCODER_SPEC: Optional[str] = None
+REAL_ENCODER_SPEC: Optional[str] = "logic.cnf_encoder:CNFEncoder"
 
 _CANDIDATE_ENCODERS: tuple[tuple[str, str], ...] = (
     ("logic.cnf_encoder", "CNFEncoder"),

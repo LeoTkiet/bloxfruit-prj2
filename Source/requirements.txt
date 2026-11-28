@@ -1,0 +1,7 @@
+# Core dependencies for Griductive Solver (CSC14003 - Project 2)
+PyQt6>=6.6.0
+matplotlib>=3.8.0
+
+# Testing dependencies
+pytest>=8.0.0
+pytest-qt>=4.4.0
